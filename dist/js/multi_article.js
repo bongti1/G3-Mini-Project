@@ -113,7 +113,7 @@ const LoadDetail = () => {
                                                             <h1 class="h4 mb-0">${article.message}</h1>
                                                             <div class="d-flex gap-2 mt-2 mt-md-0">
                                                                 <span class="card-id">ID: ${data.id}</span>
-                                                                <span class="category-badge">${data.category.name}</span>
+                                                                <span class="category-badge">${data.category === null ? null : data.category.name}</span>
                                                             </div>
                                                         </div>
                                                     </div>
