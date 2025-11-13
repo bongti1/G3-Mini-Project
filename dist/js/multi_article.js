@@ -3,6 +3,7 @@ const baseUrl = "http://blogs.csm.linkpc.net/api/v1";
 const btn_loading = document.getElementById("btn-loading");
 const articleWrapper = document.getElementById("article-wrapper");
 const card = document.getElementById("bycreatorid");
+const profileImg = document.getElementById("profile-img");
 let temp = '';
 let pro_temp = '';
 let page = 1;
@@ -47,7 +48,7 @@ const FetchAllArticle = () => {
                                     </div>
                                 </div>
                                 <div class="card-footer">
-                                    <div class="d-flex align-items-center" onclick="SetCreatorId(${element.creator.id})">
+                                    <div class="d-flex align-items-center" onclick="SetCreatorId(${element.creator.id}, ${element.id})">
                                             <img src=${element.creator.avatar}
                                                 alt="Creator avatar" class="creator-avatar rounded-circle me-3">
                                             <div>
@@ -112,7 +113,7 @@ const LoadDetail = () => {
                                                             <h1 class="h4 mb-0">${article.message}</h1>
                                                             <div class="d-flex gap-2 mt-2 mt-md-0">
                                                                 <span class="card-id">ID: ${data.id}</span>
-                                                                <span class="category-badge">${data.category}</span>
+                                                                <span class="category-badge">${data.category.name}</span>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -208,14 +209,51 @@ const LoadDetail = () => {
 }
 
 
-const SetCreatorId = (creatorId) => {
+const SetCreatorId = (creatorId, artId) => {
     localStorage.setItem('creatorId', creatorId);
+    localStorage.setItem('artId', artId);
     location.href = 'profile.html';
 }
 
 const Profile = () => {
     let allpage = 0;
     let str = '';
+    let creatorInfo = null;
+    fetch(`${baseUrl}/articles/${localStorage.getItem('artId')}`, {
+        headers: {
+            "Authorization": `Bearer ${localStorage.getItem('token')}`
+        }
+    })
+        .then(res => res.json())
+        .then((article) => {
+            const {
+                data: {
+                    creator
+                }
+            } = article;
+            creatorInfo = creator;
+            if (profileImg) {
+                profileImg.innerHTML = `
+                    <div class="container">
+                        <div class="row align-items-center">
+                            <div class="col-md-2 text-center text-md-start">
+                                <img class="card-img rounded-circle" src=${creatorInfo.avatar}>
+                            </div>
+                            <div class="col-md-7 text-center text-md-start mt-3 mt-md-0">
+                                <h1 class="h2 mb-1">${creatorInfo.firstName} ${creatorInfo.lastName}</h1>
+                                <p class="mb-2">ID : ${creatorInfo.id}</p>
+                            </div>
+                            <div class="col-md-3 text-center text-md-end mt-3 mt-md-0">
+                                <a class="btn btn-light btn-lg rounded-pill px-4" href="index.html">
+                                    <i class="bi bi-pencil me-2"></i> Back
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `
+            }
+
+        });
     fetch(`${baseUrl}/articles/by/${localStorage.getItem('creatorId')}?search=&_page=${page}&_per_page=10&sortBy=createdAt&sortDir=asc`)
         .then(res => res.json())
         .then(article => {
@@ -251,7 +289,7 @@ const Profile = () => {
             pro_temp += str
             if (card) {
                 card.innerHTML = pro_temp;
-                btn_loading.innerHTML = meta.totalItems < 10 ?'':page > meta.totalPages?'': `<button class="btn btn-primary">See More</button>`;
+                btn_loading.innerHTML = meta.totalItems < 10 ? '' : page > meta.totalPages ? '' : `<button class="btn btn-primary">See More</button>`;
             }
         })
         .catch((error) => console.log(error));
