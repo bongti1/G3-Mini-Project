@@ -14,8 +14,6 @@ const fileInput = document.getElementById("profileImageInput");
 var originalfName = "";
 var originallName = "";
 var originalGmail = "";
-const toastElement = document.getElementById('liveToast');
-const toast = new bootstrap.Toast(toastElement);
   
 fetch("http://blogs.csm.linkpc.net/api/v1/auth/profile", {
   headers: { Authorization: `Bearer ${token}` },
@@ -208,4 +206,17 @@ const logout = () => {
       })
       .catch(err => console.log(err));
 }
+}
+
+const deletePf = () => {
+  if (confirm("Are you want to delete pf?")) {
+  fetch('http://blogs.csm.linkpc.net/api/v1/profile/avatar', {
+      headers: { 'Authorization': `Bearer ${token}` },
+      method: 'DELETE'
+  }).then(res => res.json())
+      .then(data => {
+          avatar.src = data.data.avatar;
+      })
+      .catch(err => console.log(err));
+} 
 }

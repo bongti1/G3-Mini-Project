@@ -67,7 +67,6 @@ body {
   height: 160px;
   border-radius: 50%;
   border: 5px solid white;
-  background: linear-gradient(135deg, #ff6b6b, #ffa500);
   display: flex;
   align-items: center;
   justify-content: center;
