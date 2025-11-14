@@ -186,7 +186,7 @@ const LoadDetail = () => {
                                                         </div>
                                                         
                                                         <!-- Creator Information -->
-                                                        <div class="creator-info">
+                                                        <div class="creator-info" onclick="SetCreatorId(${data.creator.id}, ${data.id})">
                                                             <img src=${data.creator.avatar} 
                                                                 alt="Creator avatar" class="creator-avatar">
                                                             <div class="creator-details">
