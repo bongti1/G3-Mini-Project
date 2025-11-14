@@ -1,6 +1,6 @@
 
 const email = document.getElementById("email");
-const name = document.getElementById("name");
+const fullName = document.getElementById("name");
 const avatar = document.getElementById("avatar");
 const firstName = document.getElementById("firstNameInput");
 const lastName = document.getElementById("lastNameInput");
@@ -9,6 +9,14 @@ const countArticle = document.getElementById("postArticle");
 const wrongEmail = document.getElementById("wrongEmail");
 const token = localStorage.getItem("token");
 const warningText = document.getElementById("warningText");
+const imageWarn = document.getElementById('imageWarn')
+const fileInput = document.getElementById("profileImageInput");
+var originalfName = "";
+var originallName = "";
+var originalGmail = "";
+const toastElement = document.getElementById('liveToast');
+const toast = new bootstrap.Toast(toastElement);
+  
 fetch("http://blogs.csm.linkpc.net/api/v1/auth/profile", {
   headers: { Authorization: `Bearer ${token}` },
 })
@@ -16,15 +24,19 @@ fetch("http://blogs.csm.linkpc.net/api/v1/auth/profile", {
   .then((data) => {
     const profile = data.data;
     email.innerText = profile.email;
-    name.innerText = profile.firstName + " " + profile.lastName;
+    fullName.innerText = profile.firstName + " " + profile.lastName;
     avatar.src = profile.avatar;
     firstName.value = profile.firstName;
     lastName.value = profile.lastName;
     settingemail.value = profile.email;
+    originalfName = profile.firstName;
+    originallName = profile.lastName;
+    originalGmail = profile.email
   })
   .catch((err) => console.error(err));
-fetch(
-  "http://blogs.csm.linkpc.net/api/v1/articles/own?search=&_page=1&_per_page=10&sortBy=createdAt&sortDir=asc",
+
+  // Count article
+  fetch("http://blogs.csm.linkpc.net/api/v1/articles/own?search=&_page=1&_per_page=10&sortBy=createdAt&sortDir=asc",
   {
     headers: { Authorization: `Bearer ${token}` },
   }
@@ -38,25 +50,36 @@ fetch(
     }
   });
 
-
+  // Clear warningText
+  function clearText(){
+    warningText.innerText = "";
+    wrongEmail.innerHTML = "";
+  }
+  function clearAva(){
+    imageWarn.innerHTML = "";
+  }
+  function clearData(){
+    imageWarn.innerHTML = "";
+    fileInput.value = "";
+    warningText.innerText = "";
+    wrongEmail.innerHTML = "";
+  }
 //PUT first name and last name 
 const saveEditProfileBtn = () => {
-  const originalfName = firstName;
-  const originallName = lastName;
   const payload = {
     firstName: firstName.value,
     lastName: lastName.value,
   };
-      if(originalfName.value == firstName.value && originallName.value == lastName.value){
-        warningText.innerText = "Can not input same data";
+      if(originalfName == firstName.value && originallName == lastName.value){
+        warningText.innerHTML = '<i class="bi bi-exclamation-triangle-fill" style="margin-right:6px;color:#ffc107;"></i>Can not input same name';
         return;
       }
       if(firstName.value == ""){
-        warningText.innerText = "Please input First name";
+        warningText.innerHTML = '<i class="bi bi-exclamation-triangle-fill" style="margin-right:6px;color:#ffc107;"></i>Please input First name';
         return;
       }
       if(lastName.value == ""){
-        warningText.innerText = "Please input last name";
+        warningText.innerHTML = '<i class="bi bi-exclamation-triangle-fill" style="margin-right:6px;color:#ffc107;"></i>Please input last name';
         return;
       }
   fetch("http://blogs.csm.linkpc.net/api/v1/profile", {
@@ -70,7 +93,7 @@ const saveEditProfileBtn = () => {
     .then((res) => res.json())
     .then((data) => {
       const profile = data.data;
-        name.innerText = profile.firstName + " " + profile.lastName;
+        fullName.innerText = profile.firstName + " " + profile.lastName;
         closeModal("editProfileModal", "editProfileBackdrop");
         warningText.innerText = "";
     })
@@ -78,11 +101,10 @@ const saveEditProfileBtn = () => {
 };
 //PUT Email
 const settingBtn = () => {
-  if (settingemail.value == email.innerText) {
-    wrongEmail.innerText = "can not input same email";
+    if (originalGmail == settingemail.value) {
+     wrongEmail.innerHTML = '<i class="bi bi-exclamation-triangle-fill" style="margin-right:6px;color:#ffc107;"></i>Can not input same Gmail';
     return;
   }
-  wrongEmail.innerText = "";
   const payload = {
     email: settingemail.value,
   };
@@ -98,16 +120,17 @@ const settingBtn = () => {
     .then((data) => {
       const profile = data.data;
       email.innerText = profile.email;
+      closeModal("settingsModal", "settingsBackdrop");
     })
     .catch((err) => console.error(err));
 };
 
 // PUT Avatar
 const changeAvatar = () => {
-  const fileInput = document.getElementById("profileImageInput");
+  
   const file = fileInput.files[0];
   if (!file) {
-    alert("Please select an image file");
+    imageWarn.innerHTML = '<i class="bi bi-exclamation-triangle-fill" style="margin-right:6px;color:#ffc107;"></i>Please select an image file';
     return;
   }
   const allowedTypes = [
@@ -117,17 +140,13 @@ const changeAvatar = () => {
     "image/webp",
   ];
   if (!allowedTypes.includes(file.type)) {
-    alert("Please select a valid image file (JPG, PNG, GIF, WebP)");
+    imageWarn.innerHTML = '<i class="bi bi-exclamation-triangle-fill" style="margin-right:6px;color:#ffc107;"></i>Please select a valid image file (JPG, PNG, GIF, WebP';
     return;
   }
   //Validate file size (max 2MB)
-  const maxSize = 2 * 1024 * 1024; // 2MB in bytes
+  const maxSize = 1 * 1024 * 1024; // 2MB in bytes
   if (file.size > maxSize) {
-    alert(
-      `File is too large. Please select an image under ${
-        maxSize / (1024 * 1024)
-      } MB`
-    );
+      imageWarn.innerHTML = '<i class="bi bi-exclamation-triangle-fill" style="margin-right:6px;color:#ffc107;"></i>File is too large.';
     return;
   }
   // Show loading state: insert loader markup and disable button
@@ -164,15 +183,18 @@ const changeAvatar = () => {
         saveBtn.style.width = "";
         closeModal("editImageModal", "editImageBackdrop");
       } else {
-        alert("Upload failed. Please try again.");
+         imageWarn.innerHTML = '<i class="bi bi-exclamation-triangle-fill" style="margin-right:6px;color:#ffc107;"></i>Upload failed. Please try again.';
       }
       saveBtn.disabled = false;
       fileInput.value = "";
+      imageWarn.innerHTML = "";
     })
+    
     .catch((err) => {
       console.error(err);
     });
 };
+
 // For logout
 const logout = () => {
   if (confirm("Are you sure to log out?")) {

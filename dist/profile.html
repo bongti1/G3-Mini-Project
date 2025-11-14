@@ -128,12 +128,14 @@
                 id="profileImageInput"
                 class="form-control-custom file-input-custom"
                 accept="image/*"
+                onchange="clearAva()"
               />
             </div>
           </div>
+          <span style="color: red; font-size: smaller;" id="imageWarn" ></span>
         </div>
         <div class="modal-footer-custom">
-          <button class="btn-modal-cancel" id="cancelEditImageBtn">
+          <button class="btn-modal-cancel" id="cancelEditImageBtn" onclick="clearData()">
             Cancel
           </button>
           <button
@@ -146,6 +148,7 @@
         </div>
       </div>
     </div>
+    
     <!-- Edit Profile Modal -->
     <div class="modal-backdrop" id="editProfileBackdrop"></div>
     <div class="modal-dialog-custom" id="editProfileModal">
@@ -162,6 +165,7 @@
                   type="text"
                   id="firstNameInput"
                   class="form-control-custom"
+                  onkeydown="clearText()"
                 />
               </div>
               <div>
@@ -170,6 +174,7 @@
                   type="text"
                   id="lastNameInput"
                   class="form-control-custom"
+                  onkeydown="clearText()"
                 />
               </div>
               <span style="color: red; font-size: smaller;" id="warningText" ></span>
@@ -177,7 +182,7 @@
           </div>
         </div>
         <div class="modal-footer-custom">
-          <button class="btn-modal-cancel" id="cancelEditProfileBtn">
+          <button class="btn-modal-cancel" id="cancelEditProfileBtn" onclick="clearData()">
             Cancel
           </button>
           <button
@@ -205,6 +210,7 @@
               type="email"
               id="settingsGmailInput"
               class="form-control-custom"
+              onkeydown="clearText()"
             />
             <span
               id="wrongEmail"
@@ -213,7 +219,7 @@
           </div>
         </div>
         <div class="modal-footer-custom">
-          <button class="btn-modal-cancel" id="cancelSettingsBtn">
+          <button class="btn-modal-cancel" id="cancelSettingsBtn" onclick="clearData()">
             Cancel
           </button>
           <button
@@ -301,13 +307,6 @@
       document
         .getElementById("cancelSettingsBtn")
         .addEventListener("click", function () {
-          closeModal("settingsModal", "settingsBackdrop");
-        });
-
-      document
-        .getElementById("saveSettingsBtn")
-        .addEventListener("click", function () {
-          // Save functionality will be implemented later
           closeModal("settingsModal", "settingsBackdrop");
         });
     </script>
