@@ -11,7 +11,7 @@ let articleObj = null;
 
 const FetchAllArticle = () => {
     let allpage = 0;
-    fetch(`${baseUrl}/articles?search=&_page=${page}&_per_page=10&sortBy=content&sortDir=asc`, {
+    fetch(`${baseUrl}/articles?search=&_page=${page}&_per_page=12&sortBy=createdAt&sortDir=desc`, {
         headers: {
             'content-type': 'application/json',
             "Authorization": `Bearer ${localStorage.getItem('token')}`,
@@ -29,6 +29,14 @@ const FetchAllArticle = () => {
                 } = article;
                 allpage = meta.totalPages;
                 for (const element of items) {
+                    let text = element.content;
+                    try {
+                        const parsed = JSON.parse(element.content);
+                        // Extract all text from "insert"
+                        text = parsed.ops.map(op => op.insert).join('').trim();
+                    } catch (e) {
+                        text = element.content;
+                    }
                     art += `
                         <div class="col-12 col-lg-6 col-xl-4">
                             <div class="card" id="card-article">
@@ -43,7 +51,7 @@ const FetchAllArticle = () => {
                                         <input type="hidden" id="card-id" value="12345">
                                         <h2 class="card-title h4 mb-3 text-truncate">${element.title}</h2>
                                         <p class="card-text mb-4 text-truncate">
-                                        ${element.content}
+                                        ${text}
                                         </p>
                                     </div>
                                 </div>
@@ -104,6 +112,14 @@ const LoadDetail = () => {
                     data
                 } = article;
                 if (cardDetail) {
+                    let text = data.content;
+                    try {
+                        const parsed = JSON.parse(data.content);
+                        // Extract all text from "insert"
+                        text = parsed.ops.map(op => op.insert).join('').trim();
+                    } catch (e) {
+                        text = data.content;
+                    }
                     cardDetail.innerHTML = `<div class="row justify-content-center">
                                             <div class="col-12 col-lg-10">
                                                 <div class="card card-detail mb-5">
@@ -137,7 +153,7 @@ const LoadDetail = () => {
                                                         
                                                         <!-- Content -->
                                                         <div class="card-content">
-                                                            <p>${data.content}</p>
+                                                            <p>${text}</p>
                                                         </div>
                                                         
                                                         <!-- Tags -->
@@ -212,7 +228,7 @@ const LoadDetail = () => {
 const SetCreatorId = (creatorId, artId) => {
     localStorage.setItem('creatorId', creatorId);
     localStorage.setItem('artId', artId);
-    location.href = 'profile.html';
+    location.href = 'articlebycreator.html';
 }
 
 const Profile = () => {
@@ -254,7 +270,7 @@ const Profile = () => {
             }
 
         });
-    fetch(`${baseUrl}/articles/by/${localStorage.getItem('creatorId')}?search=&_page=${page}&_per_page=10&sortBy=createdAt&sortDir=asc`)
+    fetch(`${baseUrl}/articles/by/${localStorage.getItem('creatorId')}?search=&_page=${page}&_per_page=12&sortBy=createdAt&sortDir=desc`)
         .then(res => res.json())
         .then(article => {
             const {
@@ -264,6 +280,14 @@ const Profile = () => {
                 }
             } = article;
             for (let element of items) {
+                let text = element.content;
+                try {
+                    const parsed = JSON.parse(element.content);
+                    // Extract all text from "insert"
+                    text = parsed.ops.map(op => op.insert).join('').trim();
+                } catch (e) {
+                    text = element.content;
+                }
                 str += `
                         <div class="col-12 col-lg-6 col-xl-4">
                             <div class="card" id="card-article">
@@ -278,7 +302,7 @@ const Profile = () => {
                                         <input type="hidden" id="card-id" value="12345">
                                         <h2 class="card-title h4 mb-3 text-truncate">${element.title}</h2>
                                         <p class="card-text mb-4 text-truncate">
-                                        ${element.content}
+                                        ${text}
                                         </p>
                                     </div>
                                 </div>  
