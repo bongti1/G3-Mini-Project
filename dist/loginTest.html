@@ -402,7 +402,7 @@
         
         if (data.result) {
           localStorage.setItem('token', data.data.token)
-          location.href = './all_article.html';
+          location.href = './category.html';
         } else {
           console.log('Login failed: ' + (data.message || 'Incorrect credentials'));
           alert('Invalid!');
