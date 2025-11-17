@@ -49,15 +49,14 @@ function createArticle(event) {
 	})
 	.then(res => res.json())
 	.then(data => {
+		alert('Article created:', data);
 		console.log('Article created:', data);
-	
 		const articleID = data.data.id;
 		
 		if (articleThumbnail.files[0]) {
 			postThumbnail(articleID);
 		} else {
 			console.log('No thumbnail selected');
-			alert('Article published successfully!');
 		}
 	})
 	.catch(err => {
