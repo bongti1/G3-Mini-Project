@@ -52,12 +52,12 @@ function createArticle(event) {
 		alert('Article created:', data);
 		console.log('Article created:', data);
 		const articleID = data.data.id;
-		
 		if (articleThumbnail.files[0]) {
 			postThumbnail(articleID);
 		} else {
 			console.log('No thumbnail selected');
 		}
+		location.href = "all_article.html"
 	})
 	.catch(err => {
 		console.error('Error creating article:', err);

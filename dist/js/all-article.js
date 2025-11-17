@@ -63,7 +63,7 @@ fetch('http://blogs.csm.linkpc.net/api/v1/articles/own?search=&_page=1&_per_page
 				</td>
 				<td>
 					<div class="action-buttons">
-						<button class="btn-action btn-view" onclick="viewArticle()">
+						<button class="btn-action btn-view" onclick="SetId(${element.id})">
 							<i class="fas fa-eye"></i>
 						</button>
 						<button class="btn-action btn-edit" onclick="
