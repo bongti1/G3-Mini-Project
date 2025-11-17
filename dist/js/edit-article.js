@@ -8,6 +8,19 @@ const articleThumbnail = document.getElementById('thumbnailUpload');
 const thumbnailPreview = document.getElementById('thumbnailPreview');
 
 
+const GetCategoryById = () => {
+	const firstNode = document.createElement("option");
+	fetch(`http://blogs.csm.linkpc.net/api/v1/categories/${localStorage.getItem('categoryId')}`)
+		.then(data => data.json())
+		.then(category => {
+			// articleCategory.firstChild(firstNode);
+			// articleCategory[0].innerText = `${category.data.name}`;
+			return category.data.name;
+
+		})
+}
+
+
 // Get article by id
 fetch(`http://blogs.csm.linkpc.net/api/v1/articles/${articleID}`, {
 	headers: {
@@ -22,17 +35,17 @@ fetch(`http://blogs.csm.linkpc.net/api/v1/articles/${articleID}`, {
 			thumbnailPreview.innerHTML = `<img src="${url}" alt="Thumbnail">`;
 		}
 
-		let categorySelected = '';
+		// let categorySelected = '';
 
-		if (data.data.category && data.data.category.id) {
-			const category = data.data.category.name || 'Unknown';
-			categorySelected = `
-		<option selected value='${data.data.category.id}'>${category}</option>
-		`;
-		} else {
-			categorySelected = `<option selected>Select a category</option>`;
-		}
-		articleCategory.innerHTML = categorySelected;
+		// if (data.data.category && data.data.category.id) {
+		// 	const category = data.data.category.name || 'Unknown';
+		// 	categorySelected = `
+		// <option selected value='${data.data.category.id}'>${category}</option>
+		// `;
+		// } else {
+		// 	categorySelected = `<option selected>Select a category</option>`;
+		// }
+		// articleCategory.innerHTML = categorySelected;
 		selectCategory();
 
 
@@ -59,14 +72,14 @@ function selectCategory() {
 					items
 				}
 			} = category;
-
-			let categorySelected = '<option selected>Select a category</option>';
-			items.forEach(element => {
-
-				categorySelected += `
-			<option value="${element.id}">${element.name}</option>
-			`;
-				articleCategory.innerHTML = categorySelected;
+			items.forEach((element, index, arr) => {
+				const textNode = document.createElement("option");
+				articleCategory.appendChild(textNode);
+				articleCategory[index].innerText = `${element.name}`;
+				articleCategory[index].value = `${element.id}`;
+				if(localStorage.getItem('categoryId') == arr[index].id){
+					articleCategory[index].setAttribute('selected', true);
+				}
 			});
 		})
 }
@@ -75,7 +88,6 @@ function updateArticle(event) {
 	if (event) {
 		event.preventDefault();
 	}
-
 	console.log(articleCategory.value);
 	console.log(articleTitle.value);
 	console.log(articleContent.value);
@@ -95,7 +107,7 @@ function updateArticle(event) {
 		body: JSON.stringify(payload)
 	})
 		.then(res => res.json())
-		.then( data => {
+		.then(data => {
 			console.log(data);
 			alert('Success Update!');
 			location.href = './all_article.html';

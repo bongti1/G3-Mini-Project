@@ -29,7 +29,7 @@ fetch('http://blogs.csm.linkpc.net/api/v1/articles/own?search=&_page=1&_per_page
 	
 	let articlesCard = '';
 	items.forEach(element => {
-		console.log(element);
+		console.log(element.category.name);
 		let text = element.content;
 		try {
 			const parsed = JSON.parse(element.content);
@@ -67,7 +67,7 @@ fetch('http://blogs.csm.linkpc.net/api/v1/articles/own?search=&_page=1&_per_page
 							<i class="fas fa-eye"></i>
 						</button>
 						<button class="btn-action btn-edit" onclick="
-							editArticle('${element.id}');
+							editArticle(${element.id}, ${element.category.id});
 							"><i class="fas fa-edit"></i>
 						</button>
 						<button onclick="
@@ -103,9 +103,9 @@ fetch('http://blogs.csm.linkpc.net/api/v1/articles/own?search=&_page=1&_per_page
 	});
 })
 
-// edit article
-function editArticle(articleID) {
-	localStorage.setItem('articleID', articleID)
+function editArticle(articleID, categoryId) {
+	localStorage.setItem('articleID', articleID);
+	localStorage.setItem('categoryId', categoryId);
 	location.href = ('./edit-article.html');
 }
 
