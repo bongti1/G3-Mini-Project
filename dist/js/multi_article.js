@@ -60,7 +60,7 @@ const FetchAllArticle = () => {
                                             <img src=${element.creator.avatar}
                                                 alt="Creator avatar" class="creator-avatar rounded-circle me-3">
                                             <div>
-                                                <h6 class="mb-0">${element.creator.firstName} ${element.creator.lastName}beb</h6>
+                                                <h6 class="mb-0">${element.creator.firstName} ${element.creator.lastName}</h6>
                                             </div>
                                     </div>
                                 </div>
