@@ -52,10 +52,11 @@ loginForm.addEventListener('submit', function (e) {
                 } else {
                     toast.style.backgroundColor = 'rgba(151, 33, 33, 0.15)';
                     toast.style.border = '1px solid rgb(185, 82, 82)'
+                    alertMessage.innerHTML = `<i class="bi bi-exclamation-circle-fill text-danger"></i>`;
                 }
                 toast.classList.remove('opacity-0');
                 toast.classList.add('opacity-100');
-                alertMessage.innerHTML = data.message;
+                alertMessage.innerHTML += ` ${data.message}`;
                 toast.style.bottom = '20px'
                 setTimeout(() => {
                     toast.classList.remove('opacity-100');
@@ -63,7 +64,7 @@ loginForm.addEventListener('submit', function (e) {
                     toast.style.bottom = '0'
                 }, 2000);
 
-            }, 1000);
+            }, 500);
         })
         .catch(err => console.error(err));
 })

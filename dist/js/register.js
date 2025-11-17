@@ -116,12 +116,14 @@ registerForm.addEventListener('submit', function (e) {
                 if (data.result) {
                     toast.style.backgroundColor = 'rgba(33, 151, 61, 0.15)';
                     toast.style.border = '1px solid rgb(82, 185, 82)';
-                    alertMessage.innerHTML = data.message;
+                    alertMessage.innerHTML = `<i class="bi bi-check-circle-fill text-success"></i>`;
+                    alertMessage.innerHTML += ` ${data.message}`;
                     setTimeout(() => (location.href = 'login.html'), 1000);
                 } else {
                     toast.style.backgroundColor = 'rgba(151, 33, 33, 0.15)';
                     toast.style.border = '1px solid rgb(185, 82, 82)';
-                    alertMessage.innerHTML = data.message || 'Registration failed';
+                    alertMessage.innerHTML = `<i class="bi bi-exclamation-circle-fill text-danger"></i>`;
+                    alertMessage.innerHTML += ` ${data.message}` || 'Registration failed';
                 }
 
                 toast.classList.remove('opacity-0');
