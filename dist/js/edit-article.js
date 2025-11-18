@@ -25,19 +25,9 @@ fetch(`http://blogs.csm.linkpc.net/api/v1/articles/${articleID}`, {
         thumbnailPreview.innerHTML = `<img src="${url}" alt="Thumbnail" style="max-width:100%; max-height:100%; object-fit:cover;">`;
     }
     
-    let categorySelected = '';
+    const currentCategoryId = data.data.category ? data.data.category.id : null;
     
-    if (data.data.category && data.data.category.id) {
-        const category = data.data.category.name || 'Unknown';
-        categorySelected = `
-        <option selected value='${data.data.category.id}'>${category}</option>
-        `;
-    } else {
-        categorySelected = `<option selected>Select a category</option>`;
-    }
-    articleCategory.innerHTML = categorySelected;
-    selectCategory();
-
+    selectCategory(currentCategoryId);
     
     articleContent.value = data.data.content;
     try {
@@ -54,27 +44,33 @@ fetch(`http://blogs.csm.linkpc.net/api/v1/articles/${articleID}`, {
 
 
 // Get category
-function selectCategory() {
+function selectCategory(currentCategoryId = null) {
     fetch('http://blogs.csm.linkpc.net/api/v1/categories?_page=1&_per_page=10&sortBy=name&sortDir=ASC')
     .then(res => res.json())
     .then(category => {
-        const {
-            data: {
-                items
-            }
-        } = category;
+        const { data: { items } } = category;
 
-        let categorySelected = '<option selected>Select a category</option>';
+        let categoryOptions = '<option value="">Select a category</option>';
+        
         items.forEach(element => {
-            categorySelected += `
-            <option value="${element.id}">${element.name}</option>
+            const selected = (element.id == currentCategoryId) ? 'selected' : '';
+            categoryOptions += `
+            <option value="${element.id}" ${selected}>${element.name}</option>
             `;
         });
-        articleCategory.innerHTML = categorySelected;
+        
+        articleCategory.innerHTML = categoryOptions;
     })
     .catch(err => {
         console.error('Error loading categories:', err);
         showErrorToast('Failed to load categories');
+        
+        if (currentCategoryId) {
+            articleCategory.innerHTML = `
+                <option value="${currentCategoryId}" selected>Current Category</option>
+                <option value="">Select a category</option>
+            `;
+        }
     });
 }
 
