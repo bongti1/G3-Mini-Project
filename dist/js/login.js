@@ -10,15 +10,60 @@ const formLogin = document.getElementById('formLogin');
 const loginForm = document.getElementById('loginForm');
 const btnLoginAcc = document.getElementById('btnLoginAcc');
 
+const togglePassword = document.getElementById("togglePassword");
+
+//show and hidden password
+togglePassword.addEventListener("click", () => {
+    const type = inputPassword.type === "password" ? "text" : "password";
+    inputPassword.type = type;
+    togglePassword.innerHTML = type === "password"
+        ? '<i class="bi bi-eye-slash"></i>'
+        : '<i class="bi bi-eye"></i>';
+});
+
+// function to show error
+function showError(input, message) {
+    const feedback = input.parentElement.querySelector('.invalid-feedback');
+    feedback.textContent = message;
+    input.classList.add('is-invalid');
+    feedback.style.display = 'block';
+}
+
+// function to clear all previous errors
+function clearErrors() {
+    const inputs = document.querySelectorAll('.form-control');
+    inputs.forEach(input => input.classList.remove('is-invalid'));
+    const feedbacks = document.querySelectorAll('.invalid-feedback');
+    feedbacks.forEach(fb => {
+        fb.textContent = '';
+        fb.style.display = 'none';
+    });
+}
+
 loginForm.addEventListener('submit', function (e) {
     e.preventDefault();
+    clearErrors();
 
-    // Check form validity
-    if (!loginForm.checkValidity()) {
-        e.stopPropagation();
-        loginForm.classList.add('was-validated');
-        return;
+    let hasError = false;
+
+    if (!inputEmail.value.trim()) {
+        showError(inputEmail, 'Email is required');
+        hasError = true;
     }
+    
+    const password = inputPassword.value;
+    if (!password) {
+        showError(inputPassword, 'Password is required');
+        hasError = true;
+        togglePassword.style.top = '34%'
+        togglePassword.style.right = '10%'
+    } else {
+        togglePassword.style.top = '50%'
+        togglePassword.style.right = '5%'
+    }
+
+    // stop here if validation fails
+    if (hasError) return;
 
     // Show loading state
     btnLoginAcc.disabled = true;
@@ -30,6 +75,7 @@ loginForm.addEventListener('submit', function (e) {
         password: inputPassword.value
     };
 
+    //api login
     fetch('http://blogs.csm.linkpc.net/api/v1/auth/login', {
         method: 'POST',
         headers: {

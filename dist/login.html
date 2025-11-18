@@ -61,6 +61,32 @@
             padding: 1px 23%;
             background-color: #ddd;
         }
+
+        .form-control[type="password"]::-ms-reveal,
+        .form-control[type="password"]::-ms-clear {
+            display: none;
+        }
+
+        .form-control[type="password"]::-webkit-textfield-decoration-container {
+            display: none;
+        }
+
+        .btn-eye {
+            position: absolute;
+            right: 8%;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: transparent;
+            color: #6c757d;
+            font-size: 1.2rem;
+            z-index: 10;
+            transition: all 0.5s;
+        }
+
+        .btn-eye:hover {
+            color: #000;
+        }
     </style>
 </head>
 
@@ -92,6 +118,9 @@
                                             placeholder="Password" required>
                                         <label for="inputPassword" class="text-muted">Password <span
                                                 class="text-danger">*</span></label>
+                                        <button type="button" class="btn-eye" id="togglePassword">
+                                            <i class="bi bi-eye-slash"></i>
+                                        </button>
                                         <div class="invalid-feedback">
                                             Password is required
                                         </div>

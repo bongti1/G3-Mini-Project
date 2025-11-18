@@ -12,6 +12,26 @@ const inputConfirmPassword = document.getElementById('inputConfirmPassword');
 const toast = document.getElementById('toast');
 const alertMessage = document.getElementById('alert-message');
 
+const togglePassword = document.getElementById("togglePassword");
+const toggleConfirmPassword = document.getElementById("toggleConfirmPassword");
+
+//show and hidden password
+togglePassword.addEventListener("click", () => {
+    const type = inputPassword.type === "password" ? "text" : "password";
+    inputPassword.type = type;
+    togglePassword.innerHTML = type === "password"
+        ? '<i class="bi bi-eye-slash"></i>'
+        : '<i class="bi bi-eye"></i>';
+});
+
+toggleConfirmPassword.addEventListener("click", () => {
+    const type = inputConfirmPassword.type === "password" ? "text" : "password";
+    inputConfirmPassword.type = type;
+    toggleConfirmPassword.innerHTML = type === "password"
+        ? '<i class="bi bi-eye-slash"></i>'
+        : '<i class="bi bi-eye"></i>';
+});
+
 // function to show error
 function showError(input, message) {
     const feedback = input.parentElement.querySelector('.invalid-feedback');
@@ -63,15 +83,24 @@ registerForm.addEventListener('submit', function (e) {
     if (!password) {
         showError(inputPassword, 'Password is required');
         hasError = true;
+        togglePassword.style.top = '34%'
+        togglePassword.style.right = '10%'
     } else if (password.length < 6) {
         showError(inputPassword, 'Password must be at least 6 characters');
         hasError = true;
+        togglePassword.style.top = '34%'
+        togglePassword.style.right = '10%'
     } else if (!passwordRegex.test(password)) {
         showError(
             inputPassword,
             'Password must contain at least one uppercase letter, one number, and one special character'
         );
         hasError = true;
+        togglePassword.style.top = '28%'
+        togglePassword.style.right = '10%'
+    } else {
+        togglePassword.style.top = '50%'
+        togglePassword.style.right = '5%'
     }
 
     // confirm password
@@ -79,9 +108,16 @@ registerForm.addEventListener('submit', function (e) {
     if (!confirmPassword) {
         showError(inputConfirmPassword, 'Please confirm your password');
         hasError = true;
+        toggleConfirmPassword.style.top = '34%'
+        toggleConfirmPassword.style.right = '10%'
     } else if (confirmPassword !== password) {
         showError(inputConfirmPassword, 'Passwords do not match');
         hasError = true;
+        toggleConfirmPassword.style.top = '34%'
+        toggleConfirmPassword.style.right = '10%'
+    } else {
+        toggleConfirmPassword.style.top = '50%'
+        toggleConfirmPassword.style.right = '5%'
     }
 
     // stop here if validation fails
@@ -100,7 +136,7 @@ registerForm.addEventListener('submit', function (e) {
         confirmPassword: inputConfirmPassword.value
     };
 
-    // send api request
+    //api register
     fetch('http://blogs.csm.linkpc.net/api/v1/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
