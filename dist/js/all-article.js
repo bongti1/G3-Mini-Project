@@ -1,5 +1,88 @@
-const tabelRow = document.getElementById('articlesTableBody');
+if(!localStorage.getItem('token')) {
+    location.href = './login.html';
+}
 
+const articlesTableBody = document.getElementById('articlesTableBody');
+const totalArticlesElement = document.getElementById('totalArticles');
+const publishedArticlesElement = document.getElementById('publishedArticles');
+const draftArticlesElement = document.getElementById('draftArticles');
+const viewsCountElement = document.getElementById('viewsCount');
+const searchInput = document.getElementById('searchInput');
+const categoryFilter = document.getElementById('categoryFilter');
+
+let allArticles = [];
+let currentArticles = [];
+let articleToDelete = null;
+let deleteModal = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    createDeleteModal();
+    initializeModal();
+    loadArticles();
+    setupEventListeners();
+});
+
+function createDeleteModal() {
+    if (!document.getElementById('deleteArticle')) {
+        const modalHTML = `
+        <div class="modal fade" id="deleteArticle" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="deleteArticleLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteArticleLabel">
+                            <i class="fas fa-exclamation-triangle text-danger me-2"></i>
+                            Delete Article
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-trash-alt text-danger fa-3x mb-3"></i>
+                            <h6 class="fw-bold">Are you sure you want to delete this article?</h6>
+                            <p class="text-muted mb-0">This action cannot be undone. The article will be permanently removed from your account.</p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i>Cancel
+                        </button>
+                        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                            <i class="fas fa-trash me-1"></i>Delete Article
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', confirmDeleteArticle);
+        }
+    }
+}
+
+function initializeModal() {
+    const modalElement = document.getElementById('deleteArticle');
+    if (modalElement && typeof bootstrap !== 'undefined') {
+        deleteModal = new bootstrap.Modal(modalElement);
+    }
+}
+
+function setupEventListeners() {
+    if (searchInput) {
+        searchInput.addEventListener('input', debounce(function(e) {
+            filterArticles(e.target.value);
+        }, 300));
+    }
+    
+    if (categoryFilter) {
+        categoryFilter.addEventListener('change', function(e) {
+            filterArticles(searchInput.value, e.target.value);
+        });
+    }
+}
 
 function formatDate(dateString) {
     const date = new Date(dateString);
@@ -12,65 +95,117 @@ function formatDate(dateString) {
     });
 }
 
-// Get Article
-fetch('http://blogs.csm.linkpc.net/api/v1/articles/own?search=&_page=1&_per_page=20&sortBy=createdAt&sortDir=asc', {
-    headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-    }
-})
-.then(res => res.json())
-.then(article => {
-    const {
-        data: {
-            items
-        }
-    } = article;
+function loadArticles() {
+    showLoadingState();
     
-    let articlesCard = '';
-    items.forEach(element => {
-        console.log(element);
-        let text = element.content;
-        try {
-            const parsed = JSON.parse(element.content);
-            // Extract all text from "insert"
-            text = parsed.ops.map(op => op.insert).join('').trim();
-        } catch (e) {
-            text = element.content;
+    fetch('http://blogs.csm.linkpc.net/api/v1/articles/own?search=&_page=1&_per_page=20&sortBy=createdAt&sortDir=desc', {
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
+    })
+    .then(res => {
+        if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+    })
+    .then(article => {
+        const { data: { items } } = article;
+        allArticles = items;
+        currentArticles = [...items];
+        
+        updateStats(items);
+        displayArticles(items);
+        populateCategoryFilter(items);
+    })
+    .catch(error => {
+        console.error('Error fetching articles:', error);
+        showErrorToast('Failed to load articles');
+        showEmptyState();
+    });
+}
 
-        const category = (element.category && element.category.name) ? `${element.category.name}` : null;
-        console.log(element.id);
-        articlesCard += `
+function updateStats(articles) {
+    const total = articles.length;
+    const published = articles.filter(article => article.published).length;
+    const drafts = total - published;
+    const totalViews = articles.reduce((sum, article) => sum + (article.views || 0), 0);
+    
+    if (totalArticlesElement) totalArticlesElement.textContent = total;
+    if (publishedArticlesElement) publishedArticlesElement.textContent = published;
+    if (draftArticlesElement) draftArticlesElement.textContent = drafts;
+    if (viewsCountElement) viewsCountElement.textContent = totalViews.toLocaleString();
+}
+
+function populateCategoryFilter(articles) {
+    if (!categoryFilter) return;
+    
+    const categories = new Set();
+    articles.forEach(article => {
+        if (article.category && article.category.name) {
+            categories.add(article.category.name);
+        }
+    });
+    
+    // Clear existing options except the first one
+    while (categoryFilter.options.length > 1) {
+        categoryFilter.remove(1);
+    }
+    
+    // Add category options
+    categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category;
+        option.textContent = category;
+        categoryFilter.appendChild(option);
+    });
+}
+
+function displayArticles(articles) {
+    if (articles.length === 0) {
+        showEmptyState();
+        return;
+    }
+    
+    let articlesHTML = '';
+    
+    articles.forEach(article => {
+        const text = extractTextFromContent(article.content);
+        const category = (article.category && article.category.name) ? article.category.name : 'Uncategorized';
+        const excerpt = text.length > 120 ? text.substring(0, 120) + '...' : text;
+        const thumbnail = article.thumbnail || 'https://via.placeholder.com/80x50/4361ee/ffffff?text=No+Image';
+        
+        articlesHTML += `
             <tr>
                 <td>
-                    <img src="${element.thumbnail}" class="article-thumbnail" alt="">
+                    <img src="${thumbnail}" class="article-thumbnail" alt="${article.title}">
                 </td>
                 <td>
-                    <div class="article-title">${element.title}</div>
-                    <div class="article-excerpt">${text}</div>
+                    <div class="article-title">${article.title}</div>
+                    <div class="article-excerpt">${excerpt}</div>
                 </td>
                 <td>
                     <span class="article-category">${category}</span>
                 </td>
                 <td>
                     <span class="status-badge">
-                        ${formatDate(element.createdAt)}
+                        ${formatDate(article.createdAt)}
                     </span>
                 </td>
                 <td>
-                    <span class="article-date">${formatDate(element.updatedAt)}</span>
+                    <span class="article-date">${formatDate(article.updatedAt)}</span>
                 </td>
                 <td>
                     <div class="action-buttons">
-                        <button class="btn-action btn-view" onclick="SetId(${element.id})">
+                        <button class="btn-action btn-view" onclick="viewArticle(${article.id})" title="View Article">
                             <i class="fas fa-eye"></i>
                         </button>
-                        <button class="btn-action btn-edit" onclick="editArticle('${element.id}')">
+                        <button class="btn-action btn-edit" onclick="editArticle('${article.id}')" title="Edit Article">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button onclick="
-                            localStorage.setItem('articleID', ${element.id});
-                        " class="btn-action btn-delete" data-bs-toggle="modal" data-bs-target="#deleteArticle">
+                        <button class="btn-action btn-delete" 
+                                onclick="setArticleToDelete('${article.id}')"
+                                title="Delete Article">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -78,61 +213,109 @@ fetch('http://blogs.csm.linkpc.net/api/v1/articles/own?search=&_page=1&_per_page
             </tr>
         `;
     });
-    tabelRow.innerHTML = articlesCard;
-})
-.catch(error => {
-    console.error('Error fetching articles:', error);
-    showErrorToast('Failed to load articles');
-});
-
-// Modal delete article (move outside the loop to avoid duplicates)
-const deleteModalHTML = `
-<div class="modal fade" id="deleteArticle" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5" id="staticBackdropLabel">Delete Article</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p>Are you sure you want to delete this article? This action cannot be undone.</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" onclick="deleteArticle()" class="btn btn-danger">
-                    <i class="fas fa-trash me-1"></i> Delete Article
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-`;
-
-if (!document.getElementById('deleteArticle')) {
-    document.body.insertAdjacentHTML('beforeend', deleteModalHTML);
-}
-
-// edit article
-function editArticle(articleID) {
-    localStorage.setItem('articleID', articleID);
-    showLoadingToast('Loading article editor...');
-    setTimeout(() => {
-        location.href = './edit-article.html';
-    }, 1000);
-}
-
-// delete article
-function deleteArticle() {
-    const articleID = localStorage.getItem('articleID');
     
-    if (!articleID) {
+    articlesTableBody.innerHTML = articlesHTML;
+}
+
+function extractTextFromContent(content) {
+    if (!content) return '';
+    
+    try {
+        const parsed = JSON.parse(content);
+        if (parsed.ops && Array.isArray(parsed.ops)) {
+            return parsed.ops.map(op => op.insert).join('').trim();
+        }
+        return content;
+    } catch (e) {
+        return content;
+    }
+}
+
+function filterArticles(searchTerm = '', category = '') {
+    let filtered = allArticles;
+    
+    if (searchTerm) {
+        const term = searchTerm.toLowerCase();
+        filtered = filtered.filter(article => 
+            article.title.toLowerCase().includes(term) || 
+            extractTextFromContent(article.content).toLowerCase().includes(term)
+        );
+    }
+    
+    if (category) {
+        filtered = filtered.filter(article => 
+            article.category && article.category.name === category
+        );
+    }
+    
+    currentArticles = filtered;
+    updateStats(filtered);
+    displayArticles(filtered);
+}
+
+function showLoadingState() {
+    articlesTableBody.innerHTML = `
+        <tr class="loading-row">
+            <td colspan="6">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Loading articles...</p>
+            </td>
+        </tr>
+    `;
+}
+
+function showEmptyState() {
+    articlesTableBody.innerHTML = `
+        <tr>
+            <td colspan="6" class="empty-state">
+                <i class="fas fa-file-alt"></i>
+                <h4>No articles found</h4>
+                <p>Get started by creating your first article!</p>
+                <a href="create_article.html" class="btn btn-create mt-2">
+                    <i class="fas fa-plus-circle me-1"></i>Create First Article
+                </a>
+            </td>
+        </tr>
+    `;
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+function setArticleToDelete(articleId) {
+    articleToDelete = articleId;
+    
+    if (deleteModal) {
+        deleteModal.show();
+    } else {
+        const modalElement = document.getElementById('deleteArticle');
+        if (modalElement) {
+            deleteModal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+            deleteModal.show();
+        }
+    }
+}
+
+function confirmDeleteArticle() {
+    if (!articleToDelete) {
         showErrorToast('No article selected for deletion');
         return;
     }
 
     showLoadingToast('Deleting article...');
 
-    fetch(`http://blogs.csm.linkpc.net/api/v1/articles/${articleID}`, {
+    fetch(`http://blogs.csm.linkpc.net/api/v1/articles/${articleToDelete}`, {
         method: 'DELETE',
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -145,37 +328,51 @@ function deleteArticle() {
         return res.json();
     })
     .then(data => {
-        console.log(data);
         showDeleteSuccessToast();
         
-        const deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteArticle'));
         if (deleteModal) {
             deleteModal.hide();
         }
         
         setTimeout(() => {
-            location.reload();
-        }, 2000);
+            loadArticles();
+        }, 1500);
     })
     .catch(error => {
         console.error('Error deleting article:', error);
         showErrorToast('Failed to delete article');
+        
+        if (deleteModal) {
+            deleteModal.hide();
+        }
     });
 }
 
-// View article (placeholder function)
-function viewArticle() {
-    showInfoToast('View article feature coming soon!');
+function editArticle(articleID) {
+    localStorage.setItem('articleID', articleID);
+    showLoadingToast('Loading article editor...');
+    setTimeout(() => {
+        location.href = './edit-article.html';
+    }, 1000);
 }
 
-// Toast Notification Functions
+function viewArticle(articleId) {
+    localStorage.setItem('articleId', articleId);
+    console.log('Setting article ID:', articleId);
+    
+    showInfoToast('Loading article...');
+    
+    setTimeout(() => {
+        location.href = 'view_detail.html';
+    }, 1000);
+}
+
 function showDeleteSuccessToast() {
     createToast(
         'Article Deleted!',
         'The article has been deleted successfully.',
         'danger',
-        'fas fa-trash',
-        'linear-gradient(135deg, #dc3545, #e83e8c)'
+        'fas fa-trash'
     );
 }
 
@@ -185,8 +382,7 @@ function showLoadingToast(message) {
         message,
         'info',
         'fas fa-spinner fa-spin',
-        'linear-gradient(135deg, #6c757d, #495057)',
-        0 // No auto-hide for loading toasts
+        0
     );
 }
 
@@ -195,8 +391,7 @@ function showInfoToast(message) {
         'Information',
         message,
         'info',
-        'fas fa-info-circle',
-        'linear-gradient(135deg, #17a2b8, #6f42c1)'
+        'fas fa-info-circle'
     );
 }
 
@@ -205,14 +400,11 @@ function showErrorToast(message) {
         'Error!',
         message,
         'danger',
-        'fas fa-exclamation-circle',
-        'linear-gradient(135deg, #dc3545, #e83e8c)'
+        'fas fa-exclamation-circle'
     );
 }
 
-// Universal Toast Creator
-function createToast(title, message, type, icon, customBg = null, delay = 3000) {
-    // Create toast container if it doesn't exist
+function createToast(title, message, type, icon, delay = 3000) {
     let toastContainer = document.getElementById('toastContainer');
     if (!toastContainer) {
         toastContainer = document.createElement('div');
@@ -221,17 +413,6 @@ function createToast(title, message, type, icon, customBg = null, delay = 3000) 
         document.body.appendChild(toastContainer);
     }
 
-    const colors = {
-        success: { bg: 'linear-gradient(135deg, #28a745, #20c997)', iconBg: '#28a745' },
-        info: { bg: 'linear-gradient(135deg, #17a2b8, #6f42c1)', iconBg: '#17a2b8' },
-        danger: { bg: 'linear-gradient(135deg, #dc3545, #e83e8c)', iconBg: '#dc3545' },
-        warning: { bg: 'linear-gradient(135deg, #ffc107, #fd7e14)', iconBg: '#ffc107' }
-    };
-
-    const colorSet = colors[type] || colors.info;
-    const background = customBg || colorSet.bg;
-
-    // Create toast element
     const toastEl = document.createElement('div');
     toastEl.className = `toast custom-toast custom-toast-${type}`;
     toastEl.setAttribute('role', 'alert');
@@ -240,7 +421,7 @@ function createToast(title, message, type, icon, customBg = null, delay = 3000) 
     
     toastEl.innerHTML = `
         <div class="toast-content">
-            <div class="toast-icon" style="background: ${colorSet.iconBg}">
+            <div class="toast-icon">
                 <i class="${icon}"></i>
             </div>
             <div class="toast-message">
@@ -251,12 +432,11 @@ function createToast(title, message, type, icon, customBg = null, delay = 3000) 
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        ${delay > 0 ? `<div class="toast-progress" style="background: ${colorSet.iconBg}"></div>` : ''}
+        ${delay > 0 ? `<div class="toast-progress"></div>` : ''}
     `;
 
     toastContainer.appendChild(toastEl);
     
-    // Initialize and show the toast
     const toast = new bootstrap.Toast(toastEl, {
         autohide: delay > 0,
         delay: delay
@@ -264,10 +444,15 @@ function createToast(title, message, type, icon, customBg = null, delay = 3000) 
     
     toast.show();
     
-    // Remove toast from DOM after it's hidden
     toastEl.addEventListener('hidden.bs.toast', () => {
         toastEl.remove();
     });
     
     return toast;
 }
+
+// Make functions globally available
+// setArticleToDelete = setArticleToDelete;
+// confirmDeleteArticle = confirmDeleteArticle;
+// editArticle = editArticle;
+// viewArticle = viewArticle;

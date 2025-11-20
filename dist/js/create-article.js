@@ -1,53 +1,85 @@
+if(!localStorage.getItem('token')) {
+    location.href = 'login.html';
+}
+
 const articleTitle = document.getElementById('articleTitle');
 const articleContent = document.getElementById('articleContent');
 const articleCategory = document.getElementById('articleCategory');
 const articleThumbnail = document.getElementById('thumbnailUpload');
+const thumbnailPreview = document.getElementById('thumbnailPreview');
+const createArticleForm = document.getElementById('createArticleForm');
 
-// Get category
-fetch('http://blogs.csm.linkpc.net/api/v1/categories?_page=1&_per_page=10&sortBy=name&sortDir=ASC')
-.then(res => res.json())
-.then(category => {
-    console.log(category);
-    const {
-        data: {
-            items
-        }
-    } = category;
-
-    let categorySelected = `<option value="" selected>Select a category</option>`;
-    items.forEach(element => {
-        categorySelected += `
-            <option value="${element.id}">${element.name}</option>
-        `;
-        articleCategory.innerHTML = categorySelected;
-    });
+document.addEventListener('DOMContentLoaded', function() {
+    loadCategories();
+    setupEventListeners();
 });
 
-function createArticle(event) {
-    if (event) {
-        event.preventDefault();
+function setupEventListeners() {
+    if (createArticleForm) {
+        createArticleForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            createArticle();
+        });
     }
     
-    if (!articleTitle.value.trim()) {
-        showErrorToast('Please enter article title');
-        return;
+    if (articleThumbnail) {
+        articleThumbnail.addEventListener('change', handleThumbnailUpload);
     }
     
-    if (!articleContent.value.trim()) {
-        showErrorToast('Please enter article content');
-        return;
+    if (articleTitle) {
+        articleTitle.addEventListener('input', updateTitleCharacterCount);
     }
+}
+
+function loadCategories() {
+    // showLoadingToast('Loading categories...');
     
-    if (!articleCategory.value) {
-        showErrorToast('Please select a category');
+    fetch('http://blogs.csm.linkpc.net/api/v1/categories?_page=1&_per_page=20&sortBy=name&sortDir=ASC', {
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+    })
+    .then(res => {
+        if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+    })
+    .then(category => {
+        const { data: { items } } = category;
+        populateCategorySelect(items);
+    })
+    .catch(error => {
+        console.error('Error loading categories:', error);
+        showErrorToast('Failed to load categories');
+    });
+}
+
+function populateCategorySelect(categories) {
+    if (!articleCategory) return;
+    
+    let categoryOptions = '<option value="" selected disabled>Select a category</option>';
+    
+    categories.forEach(category => {
+        categoryOptions += `
+            <option value="${category.id}">${category.name}</option>
+        `;
+    });
+    
+    articleCategory.innerHTML = categoryOptions;
+}
+
+function createArticle() {
+    if (!validateForm()) {
         return;
     }
 
-    showLoadingToast('Creating article...');
+    setFormLoading(true);
+    showLoadingToast('Creating your article...');
     
     const payload = {
-        title: articleTitle.value,
-        content: articleContent.value,
+        title: articleTitle.value.trim(),
+        content: articleContent.value.trim(),
         categoryId: Number(articleCategory.value)
     };
     
@@ -66,36 +98,74 @@ function createArticle(event) {
         return res.json();
     })
     .then(data => {
-        console.log('Article', data);
+        console.log('Article created:', data);
         const articleID = data.data.id;
         
         if (articleThumbnail.files[0]) {
             showLoadingToast('Uploading thumbnail...');
-            postThumbnail(articleID);
+            return uploadThumbnail(articleID);
         } else {
-            showArticleSuccessToast('Article published successfully!', false);
-            resetForm();
+            return Promise.resolve({ hasThumbnail: false });
         }
-		setTimeout(() => {
-            location.href = './all_article.html';
+    })
+    .then(result => {
+        const hasThumbnail = result.hasThumbnail !== false;
+        showArticleSuccessToast('Article published successfully!', hasThumbnail);
+        resetForm();
+        
+        setTimeout(() => {
+            window.location.href = 'all_article.html';
         }, 2000);
     })
-    .catch(err => {
-        console.error('Error creating article:', err);
-        showErrorToast('Failed to create article: ' + err.message);
+    .catch(error => {
+        console.error('Error creating article:', error);
+        showErrorToast('Failed to create article: ' + error.message);
+        setFormLoading(false);
     });
 }
 
-function postThumbnail(articleID) {
-    const thumbnailLoad = new FormData();
-    thumbnailLoad.append('thumbnail', articleThumbnail.files[0]);
+function validateForm() {
+    const title = articleTitle.value.trim();
+    const content = articleContent.value.trim();
+    const category = articleCategory.value;
 
-    fetch(`http://blogs.csm.linkpc.net/api/v1/articles/${articleID}/thumbnail`, {
+    if (!title) {
+        showErrorToast('Please enter article title');
+        articleTitle.focus();
+        return false;
+    }
+    
+    if (title.length > 200) {
+        showErrorToast('Title must be less than 200 characters');
+        articleTitle.focus();
+        return false;
+    }
+    
+    if (!category) {
+        showErrorToast('Please select a category');
+        articleCategory.focus();
+        return false;
+    }
+    
+    if (!content) {
+        showErrorToast('Please enter article content');
+        articleContent.focus();
+        return false;
+    }
+
+    return true;
+}
+
+function uploadThumbnail(articleID) {
+    const formData = new FormData();
+    formData.append('thumbnail', articleThumbnail.files[0]);
+
+    return fetch(`http://blogs.csm.linkpc.net/api/v1/articles/${articleID}/thumbnail`, {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: thumbnailLoad
+        body: formData
     })
     .then(res => {
         if (!res.ok) {
@@ -105,51 +175,87 @@ function postThumbnail(articleID) {
     })
     .then(data => {
         console.log('Thumbnail uploaded:', data);
-        showArticleSuccessToast('Article and thumbnail published successfully!', true);
-        resetForm();
+        return { hasThumbnail: true };
     })
-    .catch(err => {
-        console.error('Error uploading thumbnail:', err);
+    .catch(error => {
+        console.error('Error uploading thumbnail:', error);
         showWarningToast('Article published but thumbnail upload failed');
-        resetForm();
+        return { hasThumbnail: false };
     });
 }
 
-/* thumbnail preview */
-const thumbnailPreview = document.getElementById('thumbnailPreview');
-articleThumbnail.addEventListener('change', (e) => {
-    const file = e.target.files && e.target.files[0];
+function handleThumbnailUpload(event) {
+    const file = event.target.files[0];
     if (!file) return;
     
+    if (!file.type.startsWith('image/')) {
+        showErrorToast('Please select an image file');
+        return;
+    }
+    
+    if (file.size > 5 * 1024 * 1024) {
+        showErrorToast('Image size must be less than 5MB');
+        return;
+    }
+    
     const reader = new FileReader();
-    reader.onload = function(ev) {
-        thumbnailPreview.innerHTML = `<img src="${ev.target.result}" alt="Thumbnail preview" style="max-width:100%; display:block;" />`;
+    reader.onload = function(e) {
+        thumbnailPreview.innerHTML = `
+            <img src="${e.target.result}" alt="Thumbnail preview">
+            <div class="thumbnail-overlay">
+                <i class="fas fa-sync-alt"></i>
+                <span>Change Image</span>
+            </div>
+        `;
+        thumbnailPreview.classList.add('has-image');
+    };
+    reader.onerror = function() {
+        showErrorToast('Error reading image file');
     };
     reader.readAsDataURL(file);
-});
+}
+
+function updateTitleCharacterCount() {
+    const count = articleTitle.value.length;
+    const maxLength = 200;
+    
+    if (count > maxLength * 0.9) {
+        console.log(`Title characters: ${count}/${maxLength}`);
+    }
+}
+
+function setFormLoading(loading) {
+    const submitButton = createArticleForm.querySelector('button[type="submit"]');
+    if (loading) {
+        createArticleForm.classList.add('form-loading');
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Publishing...';
+    } else {
+        createArticleForm.classList.remove('form-loading');
+        submitButton.disabled = false;
+        submitButton.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Publish Article';
+    }
+}
 
 function resetForm() {
-    articleTitle.value = '';
-    articleContent.value = '';
-    articleCategory.value = '';
-    articleThumbnail.value = '';
+    createArticleForm.reset();
     thumbnailPreview.innerHTML = `
         <div class="thumbnail-placeholder">
             <i class="fas fa-cloud-upload-alt"></i>
             <p>Click to upload a thumbnail image</p>
-            <small class="text-muted">Recommended size: 1200x630 pixels</small>
+            <small class="text-muted">Recommended: 1200x630 pixels • Max: 5MB</small>
         </div>
     `;
+    thumbnailPreview.classList.remove('has-image');
+    setFormLoading(false);
 }
 
-// Toast Notification Functions
 function showArticleSuccessToast(message, hasThumbnail) {
     createToast(
         'Article Published!',
         message,
         'success',
-        hasThumbnail ? 'fas fa-image' : 'fas fa-file-alt',
-        hasThumbnail ? 'linear-gradient(135deg, #28a745, #20c997)' : 'linear-gradient(135deg, #17a2b8, #6f42c1)'
+        hasThumbnail ? 'fas fa-image' : 'fas fa-file-alt'
     );
 }
 
@@ -159,8 +265,7 @@ function showLoadingToast(message) {
         message,
         'info',
         'fas fa-spinner fa-spin',
-        'linear-gradient(135deg, #6c757d, #495057)',
-        0 // No auto-hide for loading toasts
+        0
     );
 }
 
@@ -169,8 +274,7 @@ function showWarningToast(message) {
         'Warning',
         message,
         'warning',
-        'fas fa-exclamation-triangle',
-        'linear-gradient(135deg, #ffc107, #fd7e14)'
+        'fas fa-exclamation-triangle'
     );
 }
 
@@ -179,14 +283,11 @@ function showErrorToast(message) {
         'Error!',
         message,
         'danger',
-        'fas fa-exclamation-circle',
-        'linear-gradient(135deg, #dc3545, #e83e8c)'
+        'fas fa-exclamation-circle'
     );
 }
 
-// Universal Toast Creator
-function createToast(title, message, type, icon, customBg = null, delay = 3000) {
-    // Create toast container if it doesn't exist
+function createToast(title, message, type, icon, delay = 3000) {
     let toastContainer = document.getElementById('toastContainer');
     if (!toastContainer) {
         toastContainer = document.createElement('div');
@@ -195,17 +296,6 @@ function createToast(title, message, type, icon, customBg = null, delay = 3000) 
         document.body.appendChild(toastContainer);
     }
 
-    const colors = {
-        success: { bg: 'linear-gradient(135deg, #28a745, #20c997)', iconBg: '#28a745' },
-        info: { bg: 'linear-gradient(135deg, #17a2b8, #6f42c1)', iconBg: '#17a2b8' },
-        danger: { bg: 'linear-gradient(135deg, #dc3545, #e83e8c)', iconBg: '#dc3545' },
-        warning: { bg: 'linear-gradient(135deg, #ffc107, #fd7e14)', iconBg: '#ffc107' }
-    };
-
-    const colorSet = colors[type] || colors.info;
-    const background = customBg || colorSet.bg;
-
-    // Create toast element
     const toastEl = document.createElement('div');
     toastEl.className = `toast custom-toast custom-toast-${type}`;
     toastEl.setAttribute('role', 'alert');
@@ -214,7 +304,7 @@ function createToast(title, message, type, icon, customBg = null, delay = 3000) 
     
     toastEl.innerHTML = `
         <div class="toast-content">
-            <div class="toast-icon" style="background: ${colorSet.iconBg}">
+            <div class="toast-icon">
                 <i class="${icon}"></i>
             </div>
             <div class="toast-message">
@@ -225,12 +315,11 @@ function createToast(title, message, type, icon, customBg = null, delay = 3000) 
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        ${delay > 0 ? `<div class="toast-progress" style="background: ${colorSet.iconBg}"></div>` : ''}
+        ${delay > 0 ? `<div class="toast-progress"></div>` : ''}
     `;
 
     toastContainer.appendChild(toastEl);
     
-    // Initialize and show the toast
     const toast = new bootstrap.Toast(toastEl, {
         autohide: delay > 0,
         delay: delay
@@ -238,10 +327,45 @@ function createToast(title, message, type, icon, customBg = null, delay = 3000) 
     
     toast.show();
     
-    // Remove toast from DOM after it's hidden
     toastEl.addEventListener('hidden.bs.toast', () => {
         toastEl.remove();
     });
     
     return toast;
 }
+
+const thumbnailOverlayStyles = `
+.thumbnail-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.thumbnail-preview.has-image:hover .thumbnail-overlay {
+    opacity: 1;
+}
+
+.thumbnail-overlay i {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.thumbnail-overlay span {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+`;
+
+const styleSheet = document.createElement('style');
+styleSheet.textContent = thumbnailOverlayStyles;
+document.head.appendChild(styleSheet);

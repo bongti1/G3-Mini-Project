@@ -1,124 +1,154 @@
-const articleID = localStorage.getItem('articleID');
+if(!localStorage.getItem('token')) {
+    location.href = 'login.html';
+}
 
+const articleID = localStorage.getItem('articleID');
 const articleTitle = document.getElementById('editArticleTitle');
-let articleCategory = document.getElementById('editArticleCategory');
+const articleCategory = document.getElementById('editArticleCategory');
 const articleContent = document.getElementById('editArticleContent');
 const articleThumbnail = document.getElementById('thumbnailUpload');
 const thumbnailPreview = document.getElementById('thumbnailPreview');
+const deleteThumbnailBtn = document.getElementById('deleteThumbnailBtn');
+const editArticleForm = document.getElementById('editArticleForm');
 
+let currentArticleData = null;
 
-const GetCategoryById = () => {
-	const firstNode = document.createElement("option");
-	fetch(`http://blogs.csm.linkpc.net/api/v1/categories/${localStorage.getItem('categoryId')}`)
-		.then(data => data.json())
-		.then(category => {
-			// articleCategory.firstChild(firstNode);
-			// articleCategory[0].innerText = `${category.data.name}`;
-			return category.data.name;
-
-		})
-}
-
-
-// Get article by id
-fetch(`http://blogs.csm.linkpc.net/api/v1/articles/${articleID}`, {
-    headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-    }
-})
-.then(res => {
-    if (!res.ok) {
-        throw new Error(`Failed to load article: ${res.status}`);
-    }
-    return res.json();
-})
-.then(data => {
-    articleTitle.value = data.data.title;
-    if (data.data.thumbnail) {
-        const url = data.data.thumbnail;
-        thumbnailPreview.innerHTML = `<img src="${url}" alt="Thumbnail" style="max-width:100%; max-height:100%; object-fit:cover;">`;
-    }
-    
-    const currentCategoryId = data.data.category ? data.data.category.id : null;
-    
-    selectCategory(currentCategoryId);
-    
-    articleContent.value = data.data.content;
-    try {
-        const parsed = JSON.parse(data.data.content);
-        articleContent.value = parsed.ops.map(op => op.insert).join('').trim();
-    } catch (e) {
-        articleContent.value = data.data.content;
-    }
-
-}).catch(err => {
-    console.error(err);
-    showErrorToast('Failed to load article data');
+document.addEventListener('DOMContentLoaded', function() {
+    initializePage();
+    setupEventListeners();
 });
 
+function initializePage() {
+    if (!articleID) {
+        showErrorToast('No article selected for editing');
+        setTimeout(() => {
+            location.href = 'all_article.html';
+        }, 2000);
+        return;
+    }
+    
+    loadArticleData();
+}
 
-// Get category
-function selectCategory(currentCategoryId = null) {
-    fetch('http://blogs.csm.linkpc.net/api/v1/categories?_page=1&_per_page=10&sortBy=name&sortDir=ASC')
-    .then(res => res.json())
-    .then(category => {
-        const { data: { items } } = category;
-
-        let categoryOptions = '<option value="">Select a category</option>';
-        
-        items.forEach(element => {
-            const selected = (element.id == currentCategoryId) ? 'selected' : '';
-            categoryOptions += `
-            <option value="${element.id}" ${selected}>${element.name}</option>
-            `;
+function setupEventListeners() {
+    if (editArticleForm) {
+        editArticleForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            updateArticle();
         });
-        
-        articleCategory.innerHTML = categoryOptions;
-    })
-    .catch(err => {
-        console.error('Error loading categories:', err);
-        showErrorToast('Failed to load categories');
-        
-        if (currentCategoryId) {
-            articleCategory.innerHTML = `
-                <option value="${currentCategoryId}" selected>Current Category</option>
-                <option value="">Select a category</option>
-            `;
-        }
+    }
+    
+    if (articleThumbnail) {
+        articleThumbnail.addEventListener('change', handleThumbnailUpload);
+    }
+    
+    if (deleteThumbnailBtn) {
+        deleteThumbnailBtn.addEventListener('click', confirmDeleteThumbnail);
+    }
+    
+    if (articleTitle) {
+        articleTitle.addEventListener('input', updateTitleCharacterCount);
+    }
+}
+
+function loadArticleData() {
+    showLoadingToast('Loading article data...');
+    
+    // Load categories first
+    loadCategories().then(() => {
+        // Then load article data
+        fetch(`http://blogs.csm.linkpc.net/api/v1/articles/${articleID}`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        })
+        .then(res => {
+            if (!res.ok) {
+                throw new Error(`Failed to load article: ${res.status}`);
+            }
+            return res.json();
+        })
+        .then(data => {
+            currentArticleData = data.data;
+            populateFormData(data.data);
+        })
+        .catch(err => {
+            console.error('Error loading article:', err);
+            showErrorToast('Failed to load article data');
+        });
     });
 }
 
-function updateArticle(event) {
-    if(event) {
-        event.preventDefault();
-    }
+function loadCategories() {
+    return fetch('http://blogs.csm.linkpc.net/api/v1/categories?_page=1&_per_page=20&sortBy=name&sortDir=ASC')
+        .then(res => res.json())
+        .then(category => {
+            const { data: { items } } = category;
+            populateCategorySelect(items);
+        })
+        .catch(err => {
+            console.error('Error loading categories:', err);
+            showErrorToast('Failed to load categories');
+        });
+}
 
-    if (!articleTitle.value.trim()) {
-        showErrorToast('Please enter article title');
-        return;
+function populateCategorySelect(categories) {
+    if (!articleCategory) return;
+    
+    let categoryOptions = '<option value="" disabled>Select a category</option>';
+    
+    categories.forEach(category => {
+        categoryOptions += `
+            <option value="${category.id}">${category.name}</option>
+        `;
+    });
+    
+    articleCategory.innerHTML = categoryOptions;
+}
+
+function populateFormData(articleData) {
+
+    articleTitle.value = articleData.title || '';
+    
+    if (articleData.category && articleData.category.id) {
+        articleCategory.value = articleData.category.id;
     }
     
-    if (!articleContent.value.trim()) {
-        showErrorToast('Please enter article content');
-        return;
+    if (articleData.thumbnail) {
+        thumbnailPreview.innerHTML = `
+            <img src="${articleData.thumbnail}" alt="Article thumbnail">
+            <div class="thumbnail-overlay">
+                <i class="fas fa-sync-alt"></i>
+                <span>Change Image</span>
+            </div>
+        `;
+        thumbnailPreview.classList.add('has-image');
+        deleteThumbnailBtn.style.display = 'block';
     }
     
-    if (!articleCategory.value || articleCategory.value === 'Select a category') {
-        showErrorToast('Please select a category');
+    let content = articleData.content || '';
+    try {
+        const parsed = JSON.parse(content);
+        if (parsed.ops && Array.isArray(parsed.ops)) {
+            content = parsed.ops.map(op => op.insert).join('').trim();
+        }
+    } catch (e) {}
+    articleContent.value = content;
+}
+
+function updateArticle() {
+    if (!validateForm()) {
         return;
     }
 
-    console.log(articleCategory.value);
-    console.log(articleTitle.value);
-    console.log(articleContent.value);
-
+    setFormLoading(true);
     showLoadingToast('Updating article...');
 
     const payload = {
-        title: articleTitle.value,
-        content: articleContent.value,
+        title: articleTitle.value.trim(),
+        content: articleContent.value.trim(),
         categoryId: Number(articleCategory.value)
-    }
+    };
 
     fetch(`http://blogs.csm.linkpc.net/api/v1/articles/${articleID}`, {
         method: 'PUT',
@@ -135,34 +165,71 @@ function updateArticle(event) {
         return res.json();
     })
     .then(data => {
-        console.log(data);
-        
+        // Upload new thumbnail if selected
         if (articleThumbnail.files[0]) {
             showLoadingToast('Uploading new thumbnail...');
-            postThumbnail(articleID);
+            return uploadThumbnail();
         } else {
-            showUpdateSuccessToast('Article updated successfully!', false);
-            setTimeout(() => {
-                location.href = 'all_article.html';
-            }, 2000);
+            return Promise.resolve({ hasThumbnail: false });
         }
+    })
+    .then(result => {
+        const hasThumbnail = result.hasThumbnail !== false;
+        showUpdateSuccessToast('Article updated successfully!', hasThumbnail);
+        
+        setTimeout(() => {
+            location.href = 'all_article.html';
+        }, 2000);
     })
     .catch(err => {
         console.error('Error updating article:', err);
         showErrorToast('Failed to update article: ' + err.message);
+        setFormLoading(false);
     });
 }
 
-function postThumbnail(articleID) {
-    const thumbnailLoad = new FormData();
-    thumbnailLoad.append('thumbnail', articleThumbnail.files[0]);
+function validateForm() {
+    const title = articleTitle.value.trim();
+    const content = articleContent.value.trim();
+    const category = articleCategory.value;
 
-    fetch(`http://blogs.csm.linkpc.net/api/v1/articles/${articleID}/thumbnail`, {
+    if (!title) {
+        showErrorToast('Please enter article title');
+        articleTitle.focus();
+        return false;
+    }
+    
+    if (title.length > 200) {
+        showErrorToast('Title must be less than 200 characters');
+        articleTitle.focus();
+        return false;
+    }
+    
+    if (!category) {
+        showErrorToast('Please select a category');
+        articleCategory.focus();
+        return false;
+    }
+    
+    if (!content) {
+        showErrorToast('Please enter article content');
+        articleContent.focus();
+        return false;
+    }
+
+    return true;
+}
+
+function uploadThumbnail() {
+    const formData = new FormData();
+    formData.append('thumbnail', articleThumbnail.files[0]);
+
+    return fetch(`http://blogs.csm.linkpc.net/api/v1/articles/${articleID}/thumbnail`, {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: thumbnailLoad
+        body: formData
     })
     .then(res => {
         if (!res.ok) {
@@ -172,26 +239,55 @@ function postThumbnail(articleID) {
     })
     .then(data => {
         console.log('Thumbnail uploaded:', data);
-        showUpdateSuccessToast('Article and thumbnail updated successfully!', true);
-        setTimeout(() => {
-            location.href = 'all_article.html';
-        }, 2000);
+        return { hasThumbnail: true };
     })
     .catch(err => {
         console.error('Error uploading thumbnail:', err);
         showWarningToast('Article updated but thumbnail upload failed');
-        setTimeout(() => {
-            location.href = 'all_article.html';
-        }, 2000);
+        return { hasThumbnail: false };
     });
 }
 
-function deleteThumbnail() {
-
-	if (!confirm('Are you sure you want to delete the thumbnail?')) {
+function handleThumbnailUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+        showErrorToast('Please select an image file');
         return;
     }
+    
+    if (file.size > 5 * 1024 * 1024) {
+        showErrorToast('Image size must be less than 5MB');
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        thumbnailPreview.innerHTML = `
+            <img src="${e.target.result}" alt="Thumbnail preview">
+            <div class="thumbnail-overlay">
+                <i class="fas fa-sync-alt"></i>
+                <span>Change Image</span>
+            </div>
+        `;
+        thumbnailPreview.classList.add('has-image');
+        deleteThumbnailBtn.style.display = 'block';
+    };
+    reader.onerror = function() {
+        showErrorToast('Error reading image file');
+    };
+    reader.readAsDataURL(file);
+}
 
+function confirmDeleteThumbnail() {
+    if (!confirm('Are you sure you want to delete the thumbnail? This action cannot be undone.')) {
+        return;
+    }
+    deleteThumbnail();
+}
+
+function deleteThumbnail() {
     showLoadingToast('Deleting thumbnail...');
 
     fetch(`http://blogs.csm.linkpc.net/api/v1/articles/${articleID}/thumbnail`, {
@@ -208,18 +304,7 @@ function deleteThumbnail() {
     })
     .then(data => {
         showDeleteThumbnailSuccessToast();
-        thumbnailPreview.innerHTML = `
-            <div class="thumbnail-placeholder">
-                <i class="fas fa-cloud-upload-alt"></i>
-                <p>Click to upload a thumbnail image</p>
-                <small class="text-muted">Recommended size: 1200x630 pixels</small>
-            </div>
-        `;
-        articleThumbnail.value = '';
-        
-        setTimeout(() => {
-            location.reload();
-        }, 2000);
+        resetThumbnailPreview();
     })
     .catch(err => {
         console.error('Error deleting thumbnail:', err);
@@ -227,36 +312,56 @@ function deleteThumbnail() {
     });
 }
 
-/* thumbnail preview */
-articleThumbnail.addEventListener('change', (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = function(ev) {
-        thumbnailPreview.innerHTML = `<img src="${ev.target.result}" alt="Thumbnail preview" style="max-width:100%; max-height:100%; object-fit:cover;" />`;
-    };
-    reader.readAsDataURL(file);
-});
+function resetThumbnailPreview() {
+    thumbnailPreview.innerHTML = `
+        <div class="thumbnail-placeholder">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p>Click to upload a thumbnail image</p>
+            <small class="text-muted">Recommended: 1200x630 pixels • Max: 5MB</small>
+        </div>
+    `;
+    thumbnailPreview.classList.remove('has-image');
+    deleteThumbnailBtn.style.display = 'none';
+    articleThumbnail.value = '';
+}
 
-// Toast Notification Functions
+function updateTitleCharacterCount() {
+    const count = articleTitle.value.length;
+    const maxLength = 200;
+    
+    if (count > maxLength * 0.9) {
+        console.log(`Title characters: ${count}/${maxLength}`);
+    }
+}
+
+function setFormLoading(loading) {
+    const submitButton = editArticleForm.querySelector('button[type="submit"]');
+    if (loading) {
+        editArticleForm.classList.add('form-loading');
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Updating...';
+    } else {
+        editArticleForm.classList.remove('form-loading');
+        submitButton.disabled = false;
+        submitButton.innerHTML = '<i class="fas fa-save me-2"></i>Update Article';
+    }
+}
+
 function showUpdateSuccessToast(message, hasThumbnail) {
     createToast(
         'Article Updated!',
         message,
         'success',
-        hasThumbnail ? 'fas fa-sync-alt' : 'fas fa-edit',
-        hasThumbnail ? 'linear-gradient(135deg, #28a745, #20c997)' : 'linear-gradient(135deg, #17a2b8, #6f42c1)'
+        hasThumbnail ? 'fas fa-sync-alt' : 'fas fa-edit'
     );
 }
 
 function showDeleteThumbnailSuccessToast() {
     createToast(
-        'Thumbnail Deleted!',
+        'Thumbnail Removed!',
         'Thumbnail has been removed successfully.',
         'warning',
-        'fas fa-trash',
-        'linear-gradient(135deg, #ffc107, #fd7e14)'
+        'fas fa-trash'
     );
 }
 
@@ -266,8 +371,7 @@ function showLoadingToast(message) {
         message,
         'info',
         'fas fa-spinner fa-spin',
-        'linear-gradient(135deg, #6c757d, #495057)',
-        0 // No auto-hide for loading toasts
+        2000
     );
 }
 
@@ -276,8 +380,7 @@ function showWarningToast(message) {
         'Warning',
         message,
         'warning',
-        'fas fa-exclamation-triangle',
-        'linear-gradient(135deg, #ffc107, #fd7e14)'
+        'fas fa-exclamation-triangle'
     );
 }
 
@@ -286,14 +389,11 @@ function showErrorToast(message) {
         'Error!',
         message,
         'danger',
-        'fas fa-exclamation-circle',
-        'linear-gradient(135deg, #dc3545, #e83e8c)'
+        'fas fa-exclamation-circle'
     );
 }
 
-// Universal Toast Creator
-function createToast(title, message, type, icon, customBg = null, delay = 3000) {
-    // Create toast container if it doesn't exist
+function createToast(title, message, type, icon, delay = 3000) {
     let toastContainer = document.getElementById('toastContainer');
     if (!toastContainer) {
         toastContainer = document.createElement('div');
@@ -301,16 +401,6 @@ function createToast(title, message, type, icon, customBg = null, delay = 3000) 
         toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
         document.body.appendChild(toastContainer);
     }
-
-    const colors = {
-        success: { bg: 'linear-gradient(135deg, #28a745, #20c997)', iconBg: '#28a745' },
-        info: { bg: 'linear-gradient(135deg, #17a2b8, #6f42c1)', iconBg: '#17a2b8' },
-        danger: { bg: 'linear-gradient(135deg, #dc3545, #e83e8c)', iconBg: '#dc3545' },
-        warning: { bg: 'linear-gradient(135deg, #ffc107, #fd7e14)', iconBg: '#ffc107' }
-    };
-
-    const colorSet = colors[type] || colors.info;
-    const background = customBg || colorSet.bg;
 
     const toastEl = document.createElement('div');
     toastEl.className = `toast custom-toast custom-toast-${type}`;
@@ -320,7 +410,7 @@ function createToast(title, message, type, icon, customBg = null, delay = 3000) 
     
     toastEl.innerHTML = `
         <div class="toast-content">
-            <div class="toast-icon" style="background: ${colorSet.iconBg}">
+            <div class="toast-icon">
                 <i class="${icon}"></i>
             </div>
             <div class="toast-message">
@@ -331,12 +421,11 @@ function createToast(title, message, type, icon, customBg = null, delay = 3000) 
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        ${delay > 0 ? `<div class="toast-progress" style="background: ${colorSet.iconBg}"></div>` : ''}
+        ${delay > 0 ? `<div class="toast-progress"></div>` : ''}
     `;
 
     toastContainer.appendChild(toastEl);
     
-    // Initialize and show the toast
     const toast = new bootstrap.Toast(toastEl, {
         autohide: delay > 0,
         delay: delay
@@ -344,10 +433,12 @@ function createToast(title, message, type, icon, customBg = null, delay = 3000) 
     
     toast.show();
     
-    // Remove toast from DOM after it's hidden
     toastEl.addEventListener('hidden.bs.toast', () => {
         toastEl.remove();
     });
     
     return toast;
 }
+
+// Make functions globally available
+// confirmDeleteThumbnail = confirmDeleteThumbnail;
