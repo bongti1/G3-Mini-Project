@@ -10,7 +10,8 @@
     <title>Sidenav Light - SB Admin</title>
     <link href="css/styles.css" rel="stylesheet" />
     <link rel="stylesheet" href="./css/create-article.css">
-    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css">
+
 </head>
 
 <body class="sb-nav-fixed">
@@ -66,16 +67,16 @@
         </div>
         <div id="layoutSidenav_content">
             <main>
-                <div class="container">
+                <div class="container mt-5">
                     <!-- Back Link -->
-                    <a href="./all_article.html" class="back-link">
+                    <a href="all_article.html" class="back-link">
                         <i class="fas fa-arrow-left"></i> Back to Articles
                     </a>
 
                     <!-- Create Article Form -->
                     <div class="row justify-content-center">
-                        <div class="col-lg-8">
-                            <div class="card">
+                        <div class="col-lg-10">
+                            <div class="card create-article-card">
                                 <div class="card-header">
                                     <h3 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Create New Article</h3>
                                 </div>
@@ -83,44 +84,52 @@
                                     <form id="createArticleForm">
                                         <!-- Title Field -->
                                         <div class="mb-4">
-                                            <label for="articleTitle" class="form-label">Article Title</label>
-                                            <input type="text" class="form-control" id="articleTitle" placeholder="Enter article title" required>
+                                            <label for="articleTitle" class="form-label">Article Title *</label>
+                                            <input type="text" class="form-control" id="articleTitle" 
+                                                   placeholder="Enter a compelling article title" required
+                                                   maxlength="200">
+                                            <div class="form-text">Maximum 200 characters</div>
                                         </div>
                                         
                                         <!-- Category Field -->
                                         <div class="mb-4">
-                                            <label for="articleCategory" class="form-label">Category</label>
+                                            <label for="articleCategory" class="form-label">Category *</label>
                                             <select class="form-select" id="articleCategory" required>
-                                                
+                                                <option value="" selected disabled>Select a category</option>
                                             </select>
                                         </div>
                                         
                                         <!-- Thumbnail Field -->
                                         <div class="mb-4">
                                             <label class="form-label">Article Thumbnail</label>
-                                            <div class="thumbnail-preview mb-2" id="thumbnailPreview" onclick="document.getElementById('thumbnailUpload').click()">
+                                            <div class="thumbnail-preview mb-2" id="thumbnailPreview" 
+                                                 onclick="document.getElementById('thumbnailUpload').click()">
                                                 <div class="thumbnail-placeholder">
                                                     <i class="fas fa-cloud-upload-alt"></i>
                                                     <p>Click to upload a thumbnail image</p>
-                                                    <small class="text-muted">Recommended size: 1200x630 pixels</small>
+                                                    <small class="text-muted">Recommended: 1200x630 pixels • Max: 5MB</small>
                                                 </div>
                                             </div>
                                             <input type="file" id="thumbnailUpload" accept="image/*" class="d-none">
+                                            <div class="form-text"></div>
                                         </div>
                                         
                                         <!-- Content Field -->
                                         <div class="mb-4">
-                                            <label for="articleContent" class="form-label">Article Content</label>
-                                            <textarea class="form-control content-textarea" id="articleContent" placeholder="Write your article content here..." required></textarea>
+                                            <label for="articleContent" class="form-label">Article Content *</label>
+                                            <textarea class="form-control content-textarea" id="articleContent" 
+                                                      placeholder="Write your article content here... You can use Markdown formatting for better readability."
+                                                      required rows="5"></textarea>
+                                            <div class="form-text"></div>
                                         </div>
                                         
                                         <!-- Action Buttons -->
-                                        <div class="d-flex mt-4 action-buttons">
-                                            <button type="submit" onclick="createArticle(event);" class="btn btn-primary flex-grow-1">
-                                                <i class="fas fa-paper-plane me-2"></i>Publish Now
+                                        <div class="d-flex gap-3 mt-4 action-buttons">
+                                            <button type="submit" class="btn btn-primary btn-publish flex-grow-1">
+                                                <i class="fas fa-paper-plane me-2"></i>Publish Article
                                             </button>
-                                            <button type="button" class="btn btn-outline-secondary" onclick="location.href='./all_article.html'">
-                                                <i class="fas fa-arrow-left me-2"></i>Back to Articles
+                                            <button type="button" class="btn btn-outline-secondary" onclick="location.href='all_article.html'">
+                                                <i class="fas fa-times me-2"></i>Cancel
                                             </button>
                                         </div>
                                     </form>

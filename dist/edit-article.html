@@ -11,16 +11,16 @@
     <link rel="stylesheet" href="./css/edit.css">
 </head>
 <body>
-    <div class="container">
+     <div class="container">
         <!-- Back Link -->
-        <a href="./all_article.html" class="back-link">
+        <a href="all_article.html" class="back-link">
             <i class="fas fa-arrow-left"></i> Back to Articles
         </a>
 
         <!-- Edit Article Form -->
         <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="card">
+            <div class="col-lg-10">
+                <div class="card edit-article-card">
                     <div class="card-header">
                         <h3 class="mb-0"><i class="fas fa-edit me-2"></i>Edit Article</h3>
                     </div>
@@ -28,72 +28,59 @@
                         <form id="editArticleForm">
                             <!-- Title Field -->
                             <div class="mb-4">
-                                <label for="editArticleTitle" class="form-label">Article Title</label>
-                                <input type="text" class="form-control" id="editArticleTitle" placeholder="Enter article title" value="The Future of Web Development: Trends to Watch" required>
+                                <label for="editArticleTitle" class="form-label">Article Title *</label>
+                                <input type="text" class="form-control" id="editArticleTitle" 
+                                       placeholder="Enter article title" required maxlength="200">
+                                <div class="form-text">Maximum 200 characters</div>
                             </div>
                             
                             <!-- Category Field -->
                             <div class="mb-4">
-                                <label for="editArticleCategory" class="form-label">Category</label>
+                                <label for="editArticleCategory" class="form-label">Category *</label>
                                 <select class="form-select" id="editArticleCategory" required>
-                                    
+                                    <option value="" disabled>Loading categories...</option>
                                 </select>
                             </div>
 
                             <!-- Thumbnail Field -->
                             <div class="mb-4">
                                 <label class="form-label">Article Thumbnail</label>
-                                <div class="d-flex align-items-start">
-                                    <div class="thumbnail-preview mb-2" id="thumbnailPreview" onclick="document.getElementById('thumbnailUpload').click()">
+                                <div class="d-flex align-items-start gap-3">
+                                    <div class="thumbnail-preview" id="thumbnailPreview" 
+                                         onclick="document.getElementById('thumbnailUpload').click()">
                                         <div class="thumbnail-placeholder">
                                             <i class="fas fa-cloud-upload-alt"></i>
                                             <p>Click to upload a thumbnail image</p>
-                                            <small class="text-muted">Recommended size: 1200x630 pixels</small>
+                                            <small class="text-muted">Recommended: 1200x630 pixels • Max: 5MB</small>
                                         </div>
                                     </div>
 
-                                    <!-- Delete thumbnail button (UI only) -->
-                                    <button type="button" data-bs-toggle="modal" data-bs-target="#deleteThumbnail" id="deleteThumbnailBtn" class="btn btn-outline-danger btn-sm ms-3 mt-2" title="Delete thumbnail">
-                                        <i class="fas fa-trash"></i> Delete
+                                    <!-- Delete thumbnail button -->
+                                    <button type="button" id="deleteThumbnailBtn" 
+                                            class="btn btn-outline-danger btn-sm align-self-start" 
+                                            title="Delete thumbnail" style="display: none;">
+                                        <i class="fas fa-trash me-1"></i> Remove
                                     </button>
-                                    <!-- Modal delete article -->
-                                    <div class="modal fade" id="deleteThumbnail" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-                                        <div class="modal-dialog modal-dialog-centered">
-                                            <div class="modal-content">
-                                                <div class="modal-header">
-                                                    <h1 class="modal-title fs-5" id="staticBackdropLabel">Modal title</h1>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <p>Are you sure to delete Article</p>
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                                    <button type="button" onclick="
-                                                        deleteThumbnail();
-                                                    " class="btn btn-danger">Yes</button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
                                 </div>
                                 <input type="file" id="thumbnailUpload" accept="image/*" class="d-none">
+                                <div class="form-text">Upload a new image or remove the existing one</div>
                             </div>
                             
                             <!-- Content Field -->
                             <div class="mb-4">
-                                <label for="editArticleContent" class="form-label">Article Content</label>
-                                <textarea class="form-control content-textarea" id="editArticleContent" placeholder="Write your article content here..." required>
-
-                                </textarea>
+                                <label for="editArticleContent" class="form-label">Article Content *</label>
+                                <textarea class="form-control content-textarea" id="editArticleContent" 
+                                          placeholder="Write your article content here..." 
+                                          required rows="5"></textarea>
+                                <div class="form-text">Support for Markdown formatting available</div>
                             </div>
                             
                             <!-- Action Buttons -->
-                            <div class="d-flex mt-4 action-buttons">
-                                <button type="submit" onclick="updateArticle(event)" class="btn btn-primary flex-grow-1">
+                            <div class="d-flex gap-3 mt-4 action-buttons">
+                                <button type="submit" class="btn btn-primary btn-update flex-grow-1">
                                     <i class="fas fa-save me-2"></i>Update Article
                                 </button>
-                                <button type="button" class="btn btn-secondary" onclick="location.href='./all_article.html'">
+                                <button type="button" class="btn btn-outline-secondary" onclick="location.href='all_article.html'">
                                     <i class="fas fa-times me-2"></i>Cancel
                                 </button>
                             </div>

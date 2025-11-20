@@ -13,11 +13,62 @@ const categoryFilter = document.getElementById('categoryFilter');
 let allArticles = [];
 let currentArticles = [];
 let articleToDelete = null;
+let deleteModal = null;
 
 document.addEventListener('DOMContentLoaded', function() {
+    createDeleteModal();
+    initializeModal();
     loadArticles();
     setupEventListeners();
 });
+
+function createDeleteModal() {
+    if (!document.getElementById('deleteArticle')) {
+        const modalHTML = `
+        <div class="modal fade" id="deleteArticle" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="deleteArticleLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteArticleLabel">
+                            <i class="fas fa-exclamation-triangle text-danger me-2"></i>
+                            Delete Article
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-trash-alt text-danger fa-3x mb-3"></i>
+                            <h6 class="fw-bold">Are you sure you want to delete this article?</h6>
+                            <p class="text-muted mb-0">This action cannot be undone. The article will be permanently removed from your account.</p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i>Cancel
+                        </button>
+                        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                            <i class="fas fa-trash me-1"></i>Delete Article
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', confirmDeleteArticle);
+        }
+    }
+}
+
+function initializeModal() {
+    const modalElement = document.getElementById('deleteArticle');
+    if (modalElement && typeof bootstrap !== 'undefined') {
+        deleteModal = new bootstrap.Modal(modalElement);
+    }
+}
 
 function setupEventListeners() {
     if (searchInput) {
@@ -96,10 +147,12 @@ function populateCategoryFilter(articles) {
         }
     });
     
+    // Clear existing options except the first one
     while (categoryFilter.options.length > 1) {
         categoryFilter.remove(1);
     }
     
+    // Add category options
     categories.forEach(category => {
         const option = document.createElement('option');
         option.value = category;
@@ -118,7 +171,7 @@ function displayArticles(articles) {
     
     articles.forEach(article => {
         const text = extractTextFromContent(article.content);
-        const category = (article.category && article.category.name) ? article.category.name : null;
+        const category = (article.category && article.category.name) ? article.category.name : 'Uncategorized';
         const excerpt = text.length > 120 ? text.substring(0, 120) + '...' : text;
         const thumbnail = article.thumbnail || 'https://via.placeholder.com/80x50/4361ee/ffffff?text=No+Image';
         
@@ -151,8 +204,6 @@ function displayArticles(articles) {
                             <i class="fas fa-edit"></i>
                         </button>
                         <button class="btn-action btn-delete" 
-                                data-bs-toggle="modal" 
-                                data-bs-target="#deleteArticle" 
                                 onclick="setArticleToDelete('${article.id}')"
                                 title="Delete Article">
                             <i class="fas fa-trash"></i>
@@ -230,7 +281,6 @@ function showEmptyState() {
     `;
 }
 
-// Utility function for debouncing
 function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
@@ -245,17 +295,19 @@ function debounce(func, wait) {
 
 function setArticleToDelete(articleId) {
     articleToDelete = articleId;
+    
+    if (deleteModal) {
+        deleteModal.show();
+    } else {
+        const modalElement = document.getElementById('deleteArticle');
+        if (modalElement) {
+            deleteModal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+            deleteModal.show();
+        }
+    }
 }
 
-function editArticle(articleID) {
-    localStorage.getItem('articleID');
-    showLoadingToast('Loading article editor...');
-    setTimeout(() => {
-        location.href = './edit-article.html';
-    }, 1000);
-}
-
-function deleteArticle() {
+function confirmDeleteArticle() {
     if (!articleToDelete) {
         showErrorToast('No article selected for deletion');
         return;
@@ -278,7 +330,6 @@ function deleteArticle() {
     .then(data => {
         showDeleteSuccessToast();
         
-        const deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteArticle'));
         if (deleteModal) {
             deleteModal.hide();
         }
@@ -290,12 +341,24 @@ function deleteArticle() {
     .catch(error => {
         console.error('Error deleting article:', error);
         showErrorToast('Failed to delete article');
+        
+        if (deleteModal) {
+            deleteModal.hide();
+        }
     });
+}
+
+function editArticle(articleID) {
+    localStorage.setItem('articleID', articleID);
+    showLoadingToast('Loading article editor...');
+    setTimeout(() => {
+        location.href = './edit-article.html';
+    }, 1000);
 }
 
 function viewArticle(articleId) {
     localStorage.setItem('articleId', articleId);
-    console.log(localStorage.setItem('articleId', articleId));
+    console.log('Setting article ID:', articleId);
     
     showInfoToast('Loading article...');
     
@@ -387,3 +450,9 @@ function createToast(title, message, type, icon, delay = 3000) {
     
     return toast;
 }
+
+// Make functions globally available
+// setArticleToDelete = setArticleToDelete;
+// confirmDeleteArticle = confirmDeleteArticle;
+// editArticle = editArticle;
+// viewArticle = viewArticle;
