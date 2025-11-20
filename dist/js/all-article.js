@@ -1,5 +1,8 @@
-const tabelRow = document.getElementById('articlesTableBody');
+if(!localStorage.getItem('token')) {
+    location.href = './login.html'
+}
 
+const tabelRow = document.getElementById('articlesTableBody');
 
 function formatDate(dateString) {
     const date = new Date(dateString);
@@ -13,7 +16,7 @@ function formatDate(dateString) {
 }
 
 // Get Article
-fetch('http://blogs.csm.linkpc.net/api/v1/articles/own?search=&_page=1&_per_page=20&sortBy=createdAt&sortDir=asc', {
+fetch('http://blogs.csm.linkpc.net/api/v1/articles/own?search=&_page=1&_per_page=20&sortBy=createdAt&sortDir=desc', {
     headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}`
     }
@@ -85,7 +88,6 @@ fetch('http://blogs.csm.linkpc.net/api/v1/articles/own?search=&_page=1&_per_page
     showErrorToast('Failed to load articles');
 });
 
-// Modal delete article (move outside the loop to avoid duplicates)
 const deleteModalHTML = `
 <div class="modal fade" id="deleteArticle" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
