@@ -9,6 +9,10 @@ let pro_temp = '';
 let page = 1;
 let articleObj = null;
 
+if (!localStorage.getItem("token")) {
+    window.location.href = "login.html";
+}
+
 const FetchAllArticle = () => {
     let allpage = 0;
     fetch(`${baseUrl}/articles?search=&_page=${page}&_per_page=12&sortBy=createdAt&sortDir=desc`, {
@@ -220,8 +224,8 @@ const LoadDetail = () => {
                     `
                     }
                 }
-                else{
-                    
+                else {
+
                 }
             });
     } catch (error) {
