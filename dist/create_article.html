@@ -16,7 +16,7 @@
 <body class="sb-nav-fixed">
     <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
         <!-- Navbar Brand-->
-        <a class="navbar-brand ps-3" href="index.html">Start Bootstrap</a>
+        <a class="navbar-brand ps-3" href="index.html">G3※JS◔</a>
         <!-- Sidebar Toggle-->
         <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i
                 class="fas fa-bars"></i></button>
@@ -26,8 +26,15 @@
                     <button class="btn btn-primary" id="btnNavbarSearch" type="button"><i class="fas fa-search"></i></button>
                 </div> -->
         </form>
-        <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
-            <a class="nav-link" href="profile.html"><i class="fas fa-user fa-fw"></i></a>
+        <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4 align-items-center gap-2">
+            <span id="navEmail" class="text-white small d-none d-md-block"></span>
+            <li class="nav-item dropdown">
+                <a class="nav-link p-0" href="profile.html">
+                    <img id="navAvatar" src="https://dummyimage.com/40x40/ced4da/6c757d.jpg" alt="User Avatar"
+                        class="rounded-circle"
+                        style="width: 40px; height: 40px; object-fit: cover; border: 2px solid rgba(255,255,255,0.2);">
+                </a>
+            </li>
         </ul>
     </nav>
     <div id="layoutSidenav">
@@ -58,10 +65,10 @@
                         </a>
                     </div>
                 </div>
-                <div class="sb-sidenav-footer">
+                <!-- <div class="sb-sidenav-footer">
                     <div class="small">Logged in as:</div>
                     Start Bootstrap
-                </div>
+                </div> -->
             </nav>
         </div>
         <div id="layoutSidenav_content">
@@ -84,21 +91,23 @@
                                         <!-- Title Field -->
                                         <div class="mb-4">
                                             <label for="articleTitle" class="form-label">Article Title</label>
-                                            <input type="text" class="form-control" id="articleTitle" placeholder="Enter article title" required>
+                                            <input type="text" class="form-control" id="articleTitle"
+                                                placeholder="Enter article title" required>
                                         </div>
-                                        
+
                                         <!-- Category Field -->
                                         <div class="mb-4">
                                             <label for="articleCategory" class="form-label">Category</label>
                                             <select class="form-select" id="articleCategory" required>
-                                                
+
                                             </select>
                                         </div>
-                                        
+
                                         <!-- Thumbnail Field -->
                                         <div class="mb-4">
                                             <label class="form-label">Article Thumbnail</label>
-                                            <div class="thumbnail-preview mb-2" id="thumbnailPreview" onclick="document.getElementById('thumbnailUpload').click()">
+                                            <div class="thumbnail-preview mb-2" id="thumbnailPreview"
+                                                onclick="document.getElementById('thumbnailUpload').click()">
                                                 <div class="thumbnail-placeholder">
                                                     <i class="fas fa-cloud-upload-alt"></i>
                                                     <p>Click to upload a thumbnail image</p>
@@ -107,19 +116,22 @@
                                             </div>
                                             <input type="file" id="thumbnailUpload" accept="image/*" class="d-none">
                                         </div>
-                                        
+
                                         <!-- Content Field -->
                                         <div class="mb-4">
                                             <label for="articleContent" class="form-label">Article Content</label>
-                                            <textarea class="form-control content-textarea" id="articleContent" placeholder="Write your article content here..." required></textarea>
+                                            <textarea class="form-control content-textarea" id="articleContent"
+                                                placeholder="Write your article content here..." required></textarea>
                                         </div>
-                                        
+
                                         <!-- Action Buttons -->
                                         <div class="d-flex mt-4 action-buttons">
-                                            <button type="submit" onclick="createArticle(event);" class="btn btn-primary flex-grow-1">
+                                            <button type="submit" onclick="createArticle(event);"
+                                                class="btn btn-primary flex-grow-1">
                                                 <i class="fas fa-paper-plane me-2"></i>Publish Now
                                             </button>
-                                            <button type="button" class="btn btn-outline-secondary" onclick="location.href='./all_article.html'">
+                                            <button type="button" class="btn btn-outline-secondary"
+                                                onclick="location.href='./all_article.html'">
                                                 <i class="fas fa-arrow-left me-2"></i>Back to Articles
                                             </button>
                                         </div>

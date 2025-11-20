@@ -80,6 +80,13 @@
   --bs-highlight-bg: #fff3cd;
   --primary-color: #4361ee;
   --success-color: #4cc9f0;
+  --primary-color: #4361ee;
+  --secondary-color: #3f37c9;
+  --accent-color: #4cc9f0;
+  --light-color: #f8f9fa;
+  --dark-color: #212529;
+  --success-color: #4bb543;
+  --danger-color: #e74c3c;
   --gradient: linear-gradient(135deg,
       var(--primary-color),
       var(--success-color));
@@ -118,9 +125,48 @@ body {
   background: var(--gradient);
 }
 
-.sb-sidenav-dark .sb-sidenav-menu .nav-link,
-.sb-sidenav-dark .sb-sidenav-menu .nav-link .sb-nav-link-icon {
-  color: #1a1f3a !important;
+.sb-nav-fixed .navbar-brand {
+  font-size: x-large;
+  font-weight: bold;
+  display: flex;
+  justify-content: center;
+  color: #fff;
+}
+
+.sb-nav-fixed .navbar-brand:hover {
+  color: rgb(235, 229, 229);
+}
+
+
+element {}
+
+svg:not(:host).svg-inline--fa,
+svg:not(:root).svg-inline--fa {
+  overflow: visible;
+
+  box-sizing: content-box;
+}
+
+.svg-inline--fa {
+  display: var(--fa-display, inline-block);
+  height: 1em;
+  overflow: visible;
+  vertical-align: -.125em;
+}
+
+img,
+svg {
+  vertical-align: middle;
+}
+
+*,
+::before,
+::after {
+  box-sizing: border-box;
+}
+
+.sb-topnav.navbar-dark #sidebarToggle {
+  color: rgba(255, 255, 255, 0.5) !important;
 }
 
 hr {
@@ -3691,7 +3737,7 @@ fieldset:disabled .btn {
 
 .btn-link {
   --bs-btn-font-weight: 400;
-  --bs-btn-color: var(--bs-link-color);
+  --bs-btn-color: white !important;
   --bs-btn-bg: transparent;
   --bs-btn-border-color: transparent;
   --bs-btn-hover-color: var(--bs-link-hover-color);
@@ -3710,7 +3756,7 @@ fieldset:disabled .btn {
 }
 
 .btn-link:hover {
-  color: var(--bs-btn-hover-color);
+  color: rgb(227, 216, 216) !important;
 }
 
 .btn-lg,
