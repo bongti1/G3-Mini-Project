@@ -1,121 +1,189 @@
+if(!localStorage.getItem('token')) {
+    location.href = 'login.html';
+}
 
-const categoryTable = document.getElementById('categoryTableBody')
+const categoryTableBody = document.getElementById('categoryTableBody');
+const emptyState = document.getElementById('emptyState');
+const loadingState = document.getElementById('loadingState');
+const searchInput = document.getElementById('searchCategory');
 
-// Get all category
-fetch('http://blogs.csm.linkpc.net/api/v1/categories?_page=1&_per_page=20&sortBy=name&sortDir=ASC')
-.then(res => res.json())
-.then(categoryElement => {
-    console.log(categoryElement);
-    const {
-        data : {
-            items
+let allCategories = [];
+let currentCategories = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    createModals();
+    loadCategories();
+    setupEventListeners();
+});
+
+function createModals() {
+    if (!document.getElementById('createCategoryModal')) {
+        const createModalHTML = `
+        <div class="modal fade" id="createCategoryModal" tabindex="-1" aria-labelledby="createCategoryModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="createCategoryModalLabel">
+                            <i class="fas fa-plus-circle me-2"></i>Create Category
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="categoryName" class="form-label">Category Name</label>
+                            <input type="text" class="form-control" id="categoryName" placeholder="Enter category name" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="createCategoryBtn">
+                            <i class="fas fa-save me-1"></i> Create Category
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', createModalHTML);
+        
+        // Add event listener to create button
+        const createBtn = document.getElementById('createCategoryBtn');
+        if (createBtn) {
+            createBtn.addEventListener('click', createCategory);
         }
-    } = categoryElement;
+    }
+}
+
+function setupEventListeners() {
+    if (searchInput) {
+        searchInput.addEventListener('input', debounce(function(e) {
+            filterCategories(e.target.value);
+        }, 300));
+    }
+}
+
+function loadCategories() {
+    showLoadingState();
     
-    let categoryCard = '';
+    fetch('http://blogs.csm.linkpc.net/api/v1/categories?_page=1&_per_page=20&sortBy=name&sortDir=ASC', {
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+    })
+    .then(res => {
+        if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+    })
+    .then(categoryElement => {
+        const { data: { items } } = categoryElement;
+        allCategories = items;
+        currentCategories = [...items];
+        
+        displayCategories(items);
+    })
+    .catch(error => {
+        console.error('Error fetching categories:', error);
+        showErrorToast('Failed to load categories');
+        showEmptyState();
+    });
+}
 
-    items.forEach(element => {
-        console.log(element);
-
-        categoryCard += `
+function displayCategories(categories) {
+    if (categories.length === 0) {
+        showEmptyState();
+        return;
+    }
+    
+    hideEmptyState();
+    hideLoadingState();
+    
+    let categoriesHTML = '';
+    
+    categories.forEach(category => {
+        categoriesHTML += `
             <tr>
                 <td>
-                    <div class="fw-semibold">${element.name}</div>
+                    <div class="fw-semibold category-name">${category.name}</div>
+                    <small class="text-muted">ID: ${category.id}</small>
                 </td>
                 <td>
                     <div class="action-buttons">
-                        <button onclick="localStorage.setItem('categoryID', ${element.id}); getCategoryID()" class="btn-action btn-edit" data-bs-toggle="modal" data-bs-target="#editCategoryModal">
+                        <button class="btn-action btn-edit" onclick="openEditModal(${category.id})" title="Edit Category">
                             <i class="fas fa-edit"></i> Edit
                         </button>
-                        <button onclick="localStorage.setItem('categoryID', ${element.id}); getCategoryID()" class="btn-action btn-delete" data-bs-toggle="modal" data-bs-target="#deleteCategoryModal">
+                        <button class="btn-action btn-delete" onclick="openDeleteModal(${category.id})" title="Delete Category">
                             <i class="fas fa-trash"></i> Delete
                         </button>
-                    </div>
-                    <!-- Edit Category Modal -->
-                    <div class="modal fade" id="editCategoryModal" tabindex="-1" aria-labelledby="editCategoryModalLabel" aria-hidden="true">
-                        <div class="modal-dialog">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="editCategoryModalLabel">
-                                        <i class="fas fa-edit me-2"></i>Edit Category
-                                    </h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <div class="mb-3">
-                                        <label for="editCategoryName" class="form-label">Category Name</label>
-                                        <input type="text" class="form-control" id="editCategoryName" placeholder="Enter category name" required>
-                                        <input type="hidden" id="editCategoryId">
-                                    </div>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                    <button type="button" class="btn btn-primary" onclick="updateCategory()">
-                                        <i class="fas fa-save me-1"></i> Update Category
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Delete Category Modal -->
-                    <div class="modal fade" id="deleteCategoryModal" tabindex="-1" aria-labelledby="editCategoryModalLabel" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="editCategoryModalLabel">
-                                        <i class="fas fa-edit me-2"></i>Delete Category
-                                    </h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <div class="mb-3">
-                                        <p>Are you sure to delete Category?</p>
-                                    </div>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                    <button type="button" onclick="deleteCategory()" class="btn btn-danger">
-                                        <i class="fas fa-save me-1"></i> Delete Category
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </td>
             </tr>
         `;
-        categoryTable.innerHTML = categoryCard;
     });
-})
-
-// Get category id
-function getCategoryID() {
-    const categoryID = localStorage.getItem('categoryID');
-    const editCategoryName = document.getElementById('editCategoryName');
     
-    console.log(categoryID);
-
-    fetch(`http://blogs.csm.linkpc.net/api/v1/categories/${categoryID}`)
-    .then(res => res.json())
-    .then(data => {
-        
-        editCategoryName.value = data.data.name;
-        console.log(data.data.name);
-
-    })
+    categoryTableBody.innerHTML = categoriesHTML;
 }
 
-/// Post category
-const categoryName = document.getElementById('categoryName');
+function filterCategories(searchTerm = '') {
+    let filtered = allCategories;
+    
+    if (searchTerm) {
+        const term = searchTerm.toLowerCase();
+        filtered = filtered.filter(category => 
+            category.name.toLowerCase().includes(term)
+        );
+    }
+    
+    currentCategories = filtered;
+    displayCategories(filtered);
+}
+
+function showLoadingState() {
+    if (loadingState) loadingState.style.display = 'block';
+    if (emptyState) emptyState.classList.add('d-none');
+    if (categoryTableBody) categoryTableBody.innerHTML = '';
+}
+
+function hideLoadingState() {
+    if (loadingState) loadingState.style.display = 'none';
+}
+
+function showEmptyState() {
+    if (emptyState) emptyState.classList.remove('d-none');
+    if (categoryTableBody) categoryTableBody.innerHTML = '';
+    hideLoadingState();
+}
+
+function hideEmptyState() {
+    if (emptyState) emptyState.classList.add('d-none');
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
 
 function createCategory() {
-    if (!categoryName.value.trim()) {
+    const categoryName = document.getElementById('categoryName');
+    const name = categoryName.value.trim();
+    
+    if (!name) {
         showErrorToast('Please enter a category name');
         return;
     }
 
+    showLoadingToast('Creating category...');
+
     const payload = {
-        name: categoryName.value
+        name: name
     };
     
     fetch('http://blogs.csm.linkpc.net/api/v1/categories', {
@@ -133,16 +201,18 @@ function createCategory() {
         return res.json();
     })
     .then(data => {
-        console.log('Category created:', data);
         showCreateSuccessToast();
         categoryName.value = '';
         
+        // Close modal
         const createModal = bootstrap.Modal.getInstance(document.getElementById('createCategoryModal'));
-        createModal.hide();
+        if (createModal) {
+            createModal.hide();
+        }
         
         setTimeout(() => {
-            location.reload();
-        }, 2000);
+            loadCategories();
+        }, 1500);
     })
     .catch(err => {
         console.error('Error creating category:', err);
@@ -150,21 +220,79 @@ function createCategory() {
     });
 }
 
-// PUT update category
+function openEditModal(categoryId) {
+    fetch(`http://blogs.csm.linkpc.net/api/v1/categories/${categoryId}`)
+    .then(res => res.json())
+    .then(data => {
+        let editModal = document.getElementById('editCategoryModal');
+        if (!editModal) {
+            const editModalHTML = `
+            <div class="modal fade" id="editCategoryModal" tabindex="-1" aria-labelledby="editCategoryModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="editCategoryModalLabel">
+                                <i class="fas fa-edit me-2"></i>Edit Category
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="editCategoryName" class="form-label">Category Name</label>
+                                <input type="text" class="form-control" id="editCategoryName" placeholder="Enter category name" required>
+                                <input type="hidden" id="editCategoryId">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary" id="updateCategoryBtn">
+                                <i class="fas fa-save me-1"></i> Update Category
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', editModalHTML);
+            
+            const updateBtn = document.getElementById('updateCategoryBtn');
+            if (updateBtn) {
+                updateBtn.addEventListener('click', updateCategory);
+            }
+            
+            editModal = document.getElementById('editCategoryModal');
+        }
+        
+        document.getElementById('editCategoryName').value = data.data.name;
+        document.getElementById('editCategoryId').value = categoryId;
+        
+        // Show modal
+        const modal = new bootstrap.Modal(editModal);
+        modal.show();
+    })
+    .catch(err => {
+        console.error('Error loading category:', err);
+        showErrorToast('Failed to load category data');
+    });
+}
+
 function updateCategory() {
-    const categoryID = localStorage.getItem('categoryID');
-    const editCategoryName = document.getElementById('editCategoryName');
+    const categoryId = document.getElementById('editCategoryId').value;
+    const categoryName = document.getElementById('editCategoryName');
+    const name = categoryName.value.trim();
     
-    if (!editCategoryName.value.trim()) {
+    if (!name) {
         showErrorToast('Please enter a category name');
         return;
     }
 
+    showLoadingToast('Updating category...');
+
     const payload = {
-        name: editCategoryName.value
+        name: name
     };
     
-    fetch(`http://blogs.csm.linkpc.net/api/v1/categories/${categoryID}`, {
+    fetch(`http://blogs.csm.linkpc.net/api/v1/categories/${categoryId}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -181,12 +309,15 @@ function updateCategory() {
     .then(data => {
         showUpdateSuccessToast();
         
+        // Close modal
         const editModal = bootstrap.Modal.getInstance(document.getElementById('editCategoryModal'));
-        editModal.hide();
+        if (editModal) {
+            editModal.hide();
+        }
         
         setTimeout(() => {
-            location.reload();
-        }, 2000);
+            loadCategories();
+        }, 1500);
     })
     .catch(err => {
         console.error('Error updating category:', err);
@@ -194,11 +325,71 @@ function updateCategory() {
     });
 }
 
-// Delete category
-function deleteCategory() {
-    const categoryID = localStorage.getItem('categoryID');
+function openDeleteModal(categoryId) {
+    fetch(`http://blogs.csm.linkpc.net/api/v1/categories/${categoryId}`)
+    .then(res => res.json())
+    .then(data => {
+        // Create or update delete modal
+        let deleteModal = document.getElementById('deleteCategoryModal');
+        if (!deleteModal) {
+            const deleteModalHTML = `
+            <div class="modal fade" id="deleteCategoryModal" tabindex="-1" aria-labelledby="deleteCategoryModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="deleteCategoryModalLabel">
+                                <i class="fas fa-trash me-2 text-danger"></i>Delete Category
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="text-center mb-3">
+                                <i class="fas fa-exclamation-triangle text-danger fa-3x mb-3"></i>
+                                <h6 class="fw-bold">Are you sure you want to delete this category?</h6>
+                                <p class="text-muted mb-0" id="deleteCategoryText">This action cannot be undone.</p>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                                <i class="fas fa-trash me-1"></i> Delete Category
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', deleteModalHTML);
+            
+            const deleteBtn = document.getElementById('confirmDeleteBtn');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', deleteCategory);
+            }
+            
+            deleteModal = document.getElementById('deleteCategoryModal');
+        }
+        
+        // Update modal text
+        document.getElementById('deleteCategoryText').textContent = 
+            `Are you sure you want to delete the category "${data.data.name}"? This action cannot be undone.`;
+        document.getElementById('confirmDeleteBtn').setAttribute('data-category-id', categoryId);
+        
+        // Show modal
+        const modal = new bootstrap.Modal(deleteModal);
+        modal.show();
+    })
+    .catch(err => {
+        console.error('Error loading category:', err);
+        showErrorToast('Failed to load category data');
+    });
+}
 
-    fetch(`http://blogs.csm.linkpc.net/api/v1/categories/${categoryID}`, {
+function deleteCategory() {
+    const categoryId = document.getElementById('confirmDeleteBtn').getAttribute('data-category-id');
+    
+    showLoadingToast('Deleting category...');
+
+    fetch(`http://blogs.csm.linkpc.net/api/v1/categories/${categoryId}`, {
         method: 'DELETE',
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -211,15 +402,17 @@ function deleteCategory() {
         return res.json();
     })
     .then(data => {
-        console.log(data);
         showDeleteSuccessToast();
         
+        // Close modal
         const deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteCategoryModal'));
-        deleteModal.hide();
+        if (deleteModal) {
+            deleteModal.hide();
+        }
         
         setTimeout(() => {
-            location.reload();
-        }, 2000);
+            loadCategories();
+        }, 1500);
     })
     .catch(error => {
         console.error('Error deleting category:', error);
@@ -227,7 +420,6 @@ function deleteCategory() {
     });
 }
 
-// Toast Notification Functions
 function showCreateSuccessToast() {
     createToast(
         'Category Created!',
@@ -255,6 +447,16 @@ function showDeleteSuccessToast() {
     );
 }
 
+function showLoadingToast(message) {
+    createToast(
+        'Processing...',
+        message,
+        'info',
+        'fas fa-spinner fa-spin',
+        1500
+    );
+}
+
 function showErrorToast(message) {
     createToast(
         'Error!',
@@ -264,9 +466,7 @@ function showErrorToast(message) {
     );
 }
 
-// Universal Toast Creator
-function createToast(title, message, type, icon) {
-    // Create toast container if it doesn't exist
+function createToast(title, message, type, icon, delay = 3000) {
     let toastContainer = document.getElementById('toastContainer');
     if (!toastContainer) {
         toastContainer = document.createElement('div');
@@ -275,16 +475,6 @@ function createToast(title, message, type, icon) {
         document.body.appendChild(toastContainer);
     }
 
-    const colors = {
-        success: { bg: 'linear-gradient(135deg, #28a745, #20c997)', iconBg: '#28a745' },
-        info: { bg: 'linear-gradient(135deg, #17a2b8, #6f42c1)', iconBg: '#17a2b8' },
-        danger: { bg: 'linear-gradient(135deg, #dc3545, #e83e8c)', iconBg: '#dc3545' },
-        warning: { bg: 'linear-gradient(135deg, #ffc107, #fd7e14)', iconBg: '#ffc107' }
-    };
-
-    const colorSet = colors[type] || colors.info;
-
-    // Create toast element
     const toastEl = document.createElement('div');
     toastEl.className = `toast custom-toast custom-toast-${type}`;
     toastEl.setAttribute('role', 'alert');
@@ -293,7 +483,7 @@ function createToast(title, message, type, icon) {
     
     toastEl.innerHTML = `
         <div class="toast-content">
-            <div class="toast-icon" style="background: ${colorSet.iconBg}">
+            <div class="toast-icon">
                 <i class="${icon}"></i>
             </div>
             <div class="toast-message">
@@ -304,23 +494,25 @@ function createToast(title, message, type, icon) {
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        <div class="toast-progress" style="background: ${colorSet.iconBg}"></div>
+        ${delay > 0 ? `<div class="toast-progress"></div>` : ''}
     `;
 
     toastContainer.appendChild(toastEl);
     
-    // Initialize and show the toast
     const toast = new bootstrap.Toast(toastEl, {
-        autohide: true,
-        delay: 3000
+        autohide: delay > 0,
+        delay: delay
     });
     
     toast.show();
     
-    // Remove toast from DOM after it's hidden
     toastEl.addEventListener('hidden.bs.toast', () => {
         toastEl.remove();
     });
+    
+    return toast;
 }
 
-
+// Make functions globally available
+// openEditModal = openEditModal;
+// openDeleteModal = openDeleteModal;
