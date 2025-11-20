@@ -1,3 +1,7 @@
+if(!localStorage.getItem('token')) {
+    location.href = './login.html'
+}
+
 const articleTitle = document.getElementById('articleTitle');
 const articleContent = document.getElementById('articleContent');
 const articleCategory = document.getElementById('articleCategory');
