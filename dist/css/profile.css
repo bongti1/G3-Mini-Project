@@ -1,4 +1,14 @@
 
+:root {
+  --primary-color: #4361ee;
+  --success-color: #4cc9f0;
+  --gradient: linear-gradient(
+    135deg,
+    var(--primary-color),
+    var(--success-color)
+  );
+}
+
 .loader {
   width: 35px;
   aspect-ratio: 0.75;
@@ -44,14 +54,7 @@ body {
 
 .cover-section {
   height: 200px;
-  background: linear-gradient(
-    90deg,
-    #4a90e2 0%,
-    #50c9c3 25%,
-    #f5a623 50%,
-    #e94e77 75%,
-    #9b59b6 100%
-  );
+  background: var(--gradient);
   position: relative;
 }
 
@@ -453,6 +456,17 @@ input[type="file"]::file-selector-button:hover {
   align-items: center;
   justify-content: center;
   gap: 8px;
+}
+
+/* Delete Avatar button */
+#deleteBtn {
+  transition: all 0.2s ease;
+}
+
+#deleteBtn:hover {
+  background-color: #e0a800 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
 }
 
 /* Logout button styling (red, on the right) */

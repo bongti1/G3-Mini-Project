@@ -47,8 +47,8 @@
 </head>
 
 <body class="sb-nav-fixed">
-    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
-        <!-- Navbar Brand-->
+    <nav class="sb-topnav navbar navbar-expand">
+        <!-- NavBrand-->
         <a class="navbar-brand ps-3" href="index.html">Start Bootstrap</a>
         <!-- Sidebar Toggle-->
         <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i
@@ -61,8 +61,13 @@
                 </div> -->
         </form>
         <!-- Navbar-->  
-        <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
-            <a class="nav-link"  href="profile.html"><i class="fas fa-user fa-fw"></i></a>
+        <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4 align-items-center gap-2">
+            <span id="navEmail" class="text-white small d-none d-md-block"></span>
+            <li class="nav-item dropdown">
+                <a class="nav-link p-0" href="profile.html">
+                    <img id="navAvatar" src="https://dummyimage.com/40x40/ced4da/6c757d.jpg" alt="User Avatar" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover; border: 2px solid rgba(255,255,255,0.2);">
+                </a>
+            </li>
         </ul>
     </nav>
     <div id="layoutSidenav">

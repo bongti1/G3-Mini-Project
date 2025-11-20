@@ -104,6 +104,21 @@ body {
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
 }
 
+.sb-topnav{
+  background: linear-gradient(
+    90deg,
+    #4a90e2 0%,
+    #50c9c3 25%,
+    #f5a623 50%,
+    #e94e77 75%,
+    #9b59b6 100%
+  );
+}
+
+#sidenavAccordion{
+  background: var(--bs-gray-800);
+}
+
 hr {
   margin: 1rem 0;
   color: inherit;

@@ -8,6 +8,9 @@ const settingemail = document.getElementById("settingsGmailInput");
 const countArticle = document.getElementById("postArticle");
 const wrongEmail = document.getElementById("wrongEmail");
 const token = localStorage.getItem("token");
+if (!token) {
+  window.location.href = "./login.html";
+}
 const warningText = document.getElementById("warningText");
 const imageWarn = document.getElementById('imageWarn')
 const fileInput = document.getElementById("profileImageInput");
