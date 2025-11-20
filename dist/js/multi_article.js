@@ -14,7 +14,7 @@ const FetchAllArticle = () => {
     fetch(`${baseUrl}/articles?search=&_page=${page}&_per_page=12&sortBy=createdAt&sortDir=desc`, {
         headers: {
             'content-type': 'application/json',
-            "Authorization": `Bearer ${localStorage.getItem('token')}`,
+            // "Authorization": `Bearer ${localStorage.getItem('token')}`,
         },
     })
         .then(res => res.json())
@@ -38,7 +38,7 @@ const FetchAllArticle = () => {
                         text = element.content;
                     }
                     art += `
-                        <div class="col-12 col-lg-6 col-xl-4">
+                        <div class="col-12 col-lg-4 col-xl-3">
                             <div class="card" id="card-article">
                                 <div class="wrapper" onclick="SetId(${element.id})">
                                     <img src=${element.thumbnail}
@@ -46,11 +46,11 @@ const FetchAllArticle = () => {
                                         <span class="category-badge badge bg-primary">
                                             ${element.category == null ? element.category : element.category.name}
                                         </span>
-                                    <div class="card-body">
+                                    <div class="card-body text-truncate">
                                         <!-- ID (hidden by default, but present in DOM) -->
                                         <input type="hidden" id="card-id" value="12345">
-                                        <h2 class="card-title h4 mb-3 text-truncate">${element.title}</h2>
-                                        <p class="card-text mb-4 text-truncate">
+                                        <h2 class="card-title h4 mb-1 text-truncate">${element.title}</h2>
+                                        <p class="card-text mb-2 text-truncate">
                                         ${text}
                                         </p>
                                     </div>
@@ -108,19 +108,20 @@ const LoadDetail = () => {
         })
             .then(res => res.json())
             .then((article) => {
-                const {
-                    data
-                } = article;
-                if (cardDetail) {
-                    let text = data.content;
-                    try {
-                        const parsed = JSON.parse(data.content);
-                        // Extract all text from "insert"
-                        text = parsed.ops.map(op => op.insert).join('').trim();
-                    } catch (e) {
-                        text = data.content;
-                    }
-                    cardDetail.innerHTML = `<div class="row justify-content-center">
+                if (article.result) {
+                    const {
+                        data
+                    } = article;
+                    if (cardDetail) {
+                        let text = data.content;
+                        try {
+                            const parsed = JSON.parse(data.content);
+                            // Extract all text from "insert"
+                            text = parsed.ops.map(op => op.insert).join('').trim();
+                        } catch (e) {
+                            text = data.content;
+                        }
+                        cardDetail.innerHTML = `<div class="row justify-content-center">
                                             <div class="col-12 col-lg-10">
                                                 <div class="card card-detail mb-5">
                                                     <!-- Card Header -->
@@ -217,6 +218,10 @@ const LoadDetail = () => {
                                             </div>
                                         </div>
                     `
+                    }
+                }
+                else{
+                    
                 }
             });
     } catch (error) {

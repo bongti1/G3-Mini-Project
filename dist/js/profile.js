@@ -14,27 +14,33 @@ const fileInput = document.getElementById("profileImageInput");
 var originalfName = "";
 var originallName = "";
 var originalGmail = "";
-  
+
 fetch("http://blogs.csm.linkpc.net/api/v1/auth/profile", {
   headers: { Authorization: `Bearer ${token}` },
 })
   .then((res) => res.json())
   .then((data) => {
-    const profile = data.data;
-    email.innerText = profile.email;
-    fullName.innerText = profile.firstName + " " + profile.lastName;
-    avatar.src = profile.avatar;
-    firstName.value = profile.firstName;
-    lastName.value = profile.lastName;
-    settingemail.value = profile.email;
-    originalfName = profile.firstName;
-    originallName = profile.lastName;
-    originalGmail = profile.email
+    console.log(data.result);
+    if (data.result) {
+      const profile = data.data;
+      email.innerText = profile.email;
+      fullName.innerText = profile.firstName + " " + profile.lastName;
+      avatar.src = profile.avatar;
+      firstName.value = profile.firstName;
+      lastName.value = profile.lastName;
+      settingemail.value = profile.email;
+      originalfName = profile.firstName;
+      originallName = profile.lastName;
+      originalGmail = profile.email
+    }
+    else{
+      location.href = 'login.html';
+    }
   })
   .catch((err) => console.error(err));
 
-  // Count article
-  fetch("http://blogs.csm.linkpc.net/api/v1/articles/own?search=&_page=1&_per_page=10&sortBy=createdAt&sortDir=asc",
+// Count article
+fetch("http://blogs.csm.linkpc.net/api/v1/articles/own?search=&_page=1&_per_page=10&sortBy=createdAt&sortDir=asc",
   {
     headers: { Authorization: `Bearer ${token}` },
   }
@@ -48,38 +54,38 @@ fetch("http://blogs.csm.linkpc.net/api/v1/auth/profile", {
     }
   });
 
-  // Clear warningText
-  function clearText(){
-    warningText.innerText = "";
-    wrongEmail.innerHTML = "";
-  }
-  function clearAva(){
-    imageWarn.innerHTML = "";
-  }
-  function clearData(){
-    imageWarn.innerHTML = "";
-    fileInput.value = "";
-    warningText.innerText = "";
-    wrongEmail.innerHTML = "";
-  }
+// Clear warningText
+function clearText() {
+  warningText.innerText = "";
+  wrongEmail.innerHTML = "";
+}
+function clearAva() {
+  imageWarn.innerHTML = "";
+}
+function clearData() {
+  imageWarn.innerHTML = "";
+  fileInput.value = "";
+  warningText.innerText = "";
+  wrongEmail.innerHTML = "";
+}
 //PUT first name and last name 
 const saveEditProfileBtn = () => {
   const payload = {
     firstName: firstName.value,
     lastName: lastName.value,
   };
-      if(originalfName == firstName.value && originallName == lastName.value){
-        warningText.innerHTML = '<i class="bi bi-exclamation-triangle-fill" style="margin-right:6px;color:#ffc107;"></i>Can not input same name';
-        return;
-      }
-      if(firstName.value == ""){
-        warningText.innerHTML = '<i class="bi bi-exclamation-triangle-fill" style="margin-right:6px;color:#ffc107;"></i>Please input First name';
-        return;
-      }
-      if(lastName.value == ""){
-        warningText.innerHTML = '<i class="bi bi-exclamation-triangle-fill" style="margin-right:6px;color:#ffc107;"></i>Please input last name';
-        return;
-      }
+  if (originalfName == firstName.value && originallName == lastName.value) {
+    warningText.innerHTML = '<i class="bi bi-exclamation-triangle-fill" style="margin-right:6px;color:#ffc107;"></i>Can not input same name';
+    return;
+  }
+  if (firstName.value == "") {
+    warningText.innerHTML = '<i class="bi bi-exclamation-triangle-fill" style="margin-right:6px;color:#ffc107;"></i>Please input First name';
+    return;
+  }
+  if (lastName.value == "") {
+    warningText.innerHTML = '<i class="bi bi-exclamation-triangle-fill" style="margin-right:6px;color:#ffc107;"></i>Please input last name';
+    return;
+  }
   fetch("http://blogs.csm.linkpc.net/api/v1/profile", {
     method: "PUT",
     headers: {
@@ -91,16 +97,16 @@ const saveEditProfileBtn = () => {
     .then((res) => res.json())
     .then((data) => {
       const profile = data.data;
-        fullName.innerText = profile.firstName + " " + profile.lastName;
-        closeModal("editProfileModal", "editProfileBackdrop");
-        warningText.innerText = "";
+      fullName.innerText = profile.firstName + " " + profile.lastName;
+      closeModal("editProfileModal", "editProfileBackdrop");
+      warningText.innerText = "";
     })
     .catch((err) => console.error(err));
 };
 //PUT Email
 const settingBtn = () => {
-    if (originalGmail == settingemail.value) {
-     wrongEmail.innerHTML = '<i class="bi bi-exclamation-triangle-fill" style="margin-right:6px;color:#ffc107;"></i>Can not input same Gmail';
+  if (originalGmail == settingemail.value) {
+    wrongEmail.innerHTML = '<i class="bi bi-exclamation-triangle-fill" style="margin-right:6px;color:#ffc107;"></i>Can not input same Gmail';
     return;
   }
   const payload = {
@@ -125,7 +131,7 @@ const settingBtn = () => {
 
 // PUT Avatar
 const changeAvatar = () => {
-  
+
   const file = fileInput.files[0];
   if (!file) {
     imageWarn.innerHTML = '<i class="bi bi-exclamation-triangle-fill" style="margin-right:6px;color:#ffc107;"></i>Please select an image file';
@@ -144,7 +150,7 @@ const changeAvatar = () => {
   //Validate file size (max 2MB)
   const maxSize = 1 * 1024 * 1024; // 2MB in bytes
   if (file.size > maxSize) {
-      imageWarn.innerHTML = '<i class="bi bi-exclamation-triangle-fill" style="margin-right:6px;color:#ffc107;"></i>File is too large.';
+    imageWarn.innerHTML = '<i class="bi bi-exclamation-triangle-fill" style="margin-right:6px;color:#ffc107;"></i>File is too large.';
     return;
   }
   // Show loading state: insert loader markup and disable button
@@ -163,7 +169,6 @@ const changeAvatar = () => {
   const formData = new FormData();
   formData.append("avatar", file);
 
-
   fetch("http://blogs.csm.linkpc.net/api/v1/profile/avatar", {
     method: "POST",
     headers: {
@@ -181,13 +186,13 @@ const changeAvatar = () => {
         saveBtn.style.width = "";
         closeModal("editImageModal", "editImageBackdrop");
       } else {
-         imageWarn.innerHTML = '<i class="bi bi-exclamation-triangle-fill" style="margin-right:6px;color:#ffc107;"></i>Upload failed. Please try again.';
+        imageWarn.innerHTML = '<i class="bi bi-exclamation-triangle-fill" style="margin-right:6px;color:#ffc107;"></i>Upload failed. Please try again.';
       }
       saveBtn.disabled = false;
       fileInput.value = "";
       imageWarn.innerHTML = "";
     })
-    
+
     .catch((err) => {
       console.error(err);
     });
@@ -196,27 +201,27 @@ const changeAvatar = () => {
 // For logout
 const logout = () => {
   if (confirm("Are you sure to log out?")) {
-  fetch('http://blogs.csm.linkpc.net/api/v1/auth/logout', {
+    fetch('http://blogs.csm.linkpc.net/api/v1/auth/logout', {
       headers: { 'Authorization': `Bearer ${token}` },
       method: 'DELETE'
-  }).then(res => res.json())
+    }).then(res => res.json())
       .then(data => {
-          data.result ? location.href = "./login.html" : alert("Logout Fails!");
-          localStorage.removeItem('token');
+        data.result ? location.href = "./login.html" : alert("Logout Fails!");
+        localStorage.removeItem('token');
       })
       .catch(err => console.log(err));
-}
+  }
 }
 
 const deletePf = () => {
   if (confirm("Are you want to delete pf?")) {
-  fetch('http://blogs.csm.linkpc.net/api/v1/profile/avatar', {
+    fetch('http://blogs.csm.linkpc.net/api/v1/profile/avatar', {
       headers: { 'Authorization': `Bearer ${token}` },
       method: 'DELETE'
-  }).then(res => res.json())
+    }).then(res => res.json())
       .then(data => {
-          avatar.src = data.data.avatar;
+        avatar.src = data.data.avatar;
       })
       .catch(err => console.log(err));
-} 
+  }
 }
