@@ -3,11 +3,8 @@
 
 <head>
     <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests" />
-    <meta name="description" content="" />
-    <meta name="author" content="" />
     <title>Sidenav Light - SB Admin</title>
     <link href="css/styles.css" rel="stylesheet" />
     <link rel="stylesheet" href="./css/create-article.css">
@@ -85,21 +82,23 @@
                                         <!-- Title Field -->
                                         <div class="mb-4">
                                             <label for="articleTitle" class="form-label">Article Title</label>
-                                            <input type="text" class="form-control" id="articleTitle" placeholder="Enter article title" required>
+                                            <input type="text" class="form-control" id="articleTitle"
+                                                placeholder="Enter article title" required>
                                         </div>
-                                        
+
                                         <!-- Category Field -->
                                         <div class="mb-4">
                                             <label for="articleCategory" class="form-label">Category</label>
                                             <select class="form-select" id="articleCategory" required>
-                                                
+
                                             </select>
                                         </div>
-                                        
+
                                         <!-- Thumbnail Field -->
                                         <div class="mb-4">
                                             <label class="form-label">Article Thumbnail</label>
-                                            <div class="thumbnail-preview mb-2" id="thumbnailPreview" onclick="document.getElementById('thumbnailUpload').click()">
+                                            <div class="thumbnail-preview mb-2" id="thumbnailPreview"
+                                                onclick="document.getElementById('thumbnailUpload').click()">
                                                 <div class="thumbnail-placeholder">
                                                     <i class="fas fa-cloud-upload-alt"></i>
                                                     <p>Click to upload a thumbnail image</p>
@@ -108,19 +107,22 @@
                                             </div>
                                             <input type="file" id="thumbnailUpload" accept="image/*" class="d-none">
                                         </div>
-                                        
+
                                         <!-- Content Field -->
                                         <div class="mb-4">
                                             <label for="articleContent" class="form-label">Article Content</label>
-                                            <textarea class="form-control content-textarea" id="articleContent" placeholder="Write your article content here..." required></textarea>
+                                            <textarea class="form-control content-textarea" id="articleContent"
+                                                placeholder="Write your article content here..." required></textarea>
                                         </div>
-                                        
+
                                         <!-- Action Buttons -->
                                         <div class="d-flex mt-4 action-buttons">
-                                            <button type="submit" onclick="createArticle(event);" class="btn btn-primary flex-grow-1">
+                                            <button type="submit" onclick="createArticle(event);"
+                                                class="btn btn-primary flex-grow-1">
                                                 <i class="fas fa-paper-plane me-2"></i>Publish Now
                                             </button>
-                                            <button type="button" class="btn btn-outline-secondary" onclick="location.href='./all_article.html'">
+                                            <button type="button" class="btn btn-outline-secondary"
+                                                onclick="location.href='./all_article.html'">
                                                 <i class="fas fa-arrow-left me-2"></i>Back to Articles
                                             </button>
                                         </div>
