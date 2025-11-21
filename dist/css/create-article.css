@@ -44,7 +44,7 @@ body {
 
 .create-article-card {
     border: none;
-    border-radius: 1rem;
+    border-radius: 1rem !important;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
     margin-bottom: 2rem;
     overflow: hidden;
